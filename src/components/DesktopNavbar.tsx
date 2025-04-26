@@ -1,0 +1,46 @@
+import { currentUser } from '@clerk/nextjs/server'
+import React from 'react'
+import { Button } from './ui/button'
+import Link from 'next/link'
+import { BellIcon, HomeIcon,  UserIcon} from 'lucide-react'
+import { SignUpButton, UserButton } from '@clerk/nextjs'
+
+const DesktopNavbar = async() => {
+    const user = await currentUser()
+    console.log("user is here", user)
+  return (
+    <div className='hidden md:flex items-center space-x-4 '>
+
+        <Button variant={'ghost'} className='flex items-center gap-2 'asChild>
+            <Link href='/'>
+            <HomeIcon className='w-4 h-4'/>
+            <span className='hidden lg:inline'>Home</span>
+            </Link>
+        </Button>  
+
+        {user ? (
+            <>
+            <Button variant={'ghost'} className='flex items-center gap-2' asChild>
+                <Link href="/notifications">
+                <BellIcon className='w-4 h-4'/><span className='hidden lg:inline'>Notifications</span>
+                </Link>
+            </Button>
+            <Button variant='ghost' className='flex items-center gap-2'>
+                <Link
+                href={`/profile/${user.username ?? user.emailAddresses[0].emailAddress.split('@')[0]}`}>
+                    <UserIcon className='w-4 h-4'/>
+                    <span className='hidden lg:inline'>Profile</span>
+                </Link>
+            </Button>
+            <UserButton/>
+            </>
+        ): (
+            <SignUpButton mode="modal">
+            <Button className="bg-[#030f0f] cursor-pointer">Sign in</Button>
+            </SignUpButton>
+        )}
+    </div>
+  )
+}
+
+export default DesktopNavbar
