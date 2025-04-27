@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
-import { Inter } from "next/font/google";
+//import { Inter } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "@/components/Navbar";
+import { ThemeProvider } from "@/components/ThemeProvider"
+import Sidemenu from "@/components/Sidemenu";
+import { Toaster } from "@/components/ui/sonner";
 
 // Importing the font and setting the variable to use globally
 const spaceGrotesk = Space_Grotesk({
@@ -12,10 +16,10 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
 });
 
-const inter = Inter({
+const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
-  variable: "--font-inter",
+  variable: "--font-poppins",
 });
 
 export const metadata: Metadata = {
@@ -32,23 +36,35 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${spaceGrotesk.variable} ${inter.variable} antialiased`}
+          className={`${spaceGrotesk.variable} ${poppins.variable} antialiased`}
         >
-          <div className="min-h-screen">
-            <Navbar />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="min-h-screen">
+              <Navbar />
 
-            <main className="py-8">
-              {/* container to center component */}
-              <div className="max-w-7xl mx-auto px-4">
-                <div className="grid grid-cols-1 lg:grid-cols-12">
-                  <div className="hidden lg:block lg:col-span-3">Sidebar</div>
-                  <div className="lg:col-span-9">{children}</div>
+              <main className="py-8">
+                {/* container to center component */}
+                <div className="max-w-7xl mx-auto px-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-12">
+                    <div className="hidden lg:block lg:col-span-3">
+                      <Sidemenu/>
+                    </div>
+                    <div className="lg:col-span-9">{children}</div>
+                  </div>
                 </div>
-              </div>
-            </main>
-          </div>
+              </main>
+            </div>
+            <Toaster/>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
   );
 }
+
+/*</ThemeProvider>*/

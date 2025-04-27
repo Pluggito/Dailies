@@ -4,12 +4,13 @@ import { Button } from './ui/button'
 import Link from 'next/link'
 import { BellIcon, HomeIcon,  UserIcon} from 'lucide-react'
 import { SignUpButton, UserButton } from '@clerk/nextjs'
+import ModeToggle from './ModeToggle'
 
 const DesktopNavbar = async() => {
     const user = await currentUser()
-    console.log("user is here", user)
   return (
     <div className='hidden md:flex items-center space-x-4 '>
+        <ModeToggle/>
 
         <Button variant={'ghost'} className='flex items-center gap-2 'asChild>
             <Link href='/'>
@@ -27,7 +28,7 @@ const DesktopNavbar = async() => {
             </Button>
             <Button variant='ghost' className='flex items-center gap-2'>
                 <Link
-                href={`/profile/${user.username ?? user.emailAddresses[0].emailAddress.split('@')[0]}`}>
+                href={`/profile/${user.username ?? user.emailAddresses[0].emailAddress.split('@')[0]}`} className='flex items-center gap-2'>
                     <UserIcon className='w-4 h-4'/>
                     <span className='hidden lg:inline'>Profile</span>
                 </Link>
@@ -36,7 +37,7 @@ const DesktopNavbar = async() => {
             </>
         ): (
             <SignUpButton mode="modal">
-            <Button className="bg-[#030f0f] cursor-pointer">Sign in</Button>
+            <Button variant={'default'} className="cursor-pointer">Sign in</Button>
             </SignUpButton>
         )}
     </div>
