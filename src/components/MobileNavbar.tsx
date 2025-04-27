@@ -18,12 +18,15 @@ import {
 import { useState } from "react";
 import { SignInButton, SignOutButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
+import ModeToggle from "./ModeToggle";
 
 const MobileNavbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { isSignedIn } = useAuth();
   return (
     <div className="flex md:hidden items-center space-x-2">
+      <ModeToggle/>
+
       <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
         <SheetTrigger asChild>
           <Button variant={"ghost"} size="icon">
