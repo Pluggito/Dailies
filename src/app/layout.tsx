@@ -5,15 +5,22 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "@/components/Navbar";
-import { ThemeProvider } from "@/components/ThemeProvider"
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Sidemenu from "@/components/Sidemenu";
 import { Toaster } from "@/components/ui/sonner";
+import { Pacifico } from "next/font/google";
 
 // Importing the font and setting the variable to use globally
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
   variable: "--font-space-grotesk",
+});
+
+const pacifico = Pacifico({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-pacifico",
 });
 
 const poppins = Poppins({
@@ -24,7 +31,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "Dailies",
-  description: "Social Media App",
+  description: "Social media application powered by next.js",
 };
 
 export default function RootLayout({
@@ -36,7 +43,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${spaceGrotesk.variable} ${poppins.variable} antialiased`}
+          className={`${spaceGrotesk.variable} ${pacifico.variable} ${poppins} antialiased`}
         >
           <ThemeProvider
             attribute="class"
@@ -52,14 +59,14 @@ export default function RootLayout({
                 <div className="max-w-7xl mx-auto px-4">
                   <div className="grid grid-cols-1 lg:grid-cols-12">
                     <div className="hidden lg:block lg:col-span-3">
-                      <Sidemenu/>
+                      <Sidemenu />
                     </div>
                     <div className="lg:col-span-9">{children}</div>
                   </div>
                 </div>
               </main>
             </div>
-            <Toaster/>
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>

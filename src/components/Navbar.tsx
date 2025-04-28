@@ -14,7 +14,7 @@ const Navbar = async() => {
       <div className=" max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="text-2xl font-bold text-primary font-poppins">Dailies</Link>
+            <Link href="/" className="text-2xl font-bold text-primary font-pacifico">Dailies</Link>
           </div>
 
           <DesktopNavbar />
