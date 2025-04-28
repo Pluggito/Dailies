@@ -9,6 +9,8 @@ import { Button } from "./ui/button";
 import { ImageIcon, Loader2Icon, SendIcon } from "lucide-react";
 import { createPost } from "@/actions/post.action";
 import { toast } from "sonner";
+import ImageUploads from "./ImageUploads";
+
 
 const CreatePost = () => {
   const { user } = useUser();
@@ -23,7 +25,7 @@ const CreatePost = () => {
     setIsPosting(true)
     try {
         const res = await createPost(content, imageUrl)
-        if(res.success){
+        if(res?.success){
            setContent('')
            setImageUrl('') 
            setShowImageUpload(false)
@@ -40,7 +42,7 @@ const CreatePost = () => {
   };
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-6 bg-transparent">
       <CardContent>
         <div className="space">
           <div className="flex space-x-4">
@@ -50,11 +52,26 @@ const CreatePost = () => {
             <Textarea
               placeholder="what's on your mind?"
               className="min-h-[100px] resize-none border-none focus-visible:ring-0 p-0 text-base mt-2"
+              id="content"
+              name="Content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               disabled={isPosting}
             />
           </div>
+
+          {(showImageUpload || imageUrl) && (
+            <div className=" p-4">
+              <ImageUploads
+                endpoint="postImage"
+                value={imageUrl}
+                onChange={(url) => {
+                  setImageUrl(url);
+                  if (!url) setShowImageUpload(false);
+                }}
+              />
+            </div>
+          )}
 
           <div className="flex iems-center justify-between border-t pt-4">
             <div className="flx space-x-2">
