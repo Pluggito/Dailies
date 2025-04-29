@@ -147,7 +147,7 @@ const PostCard = ({
               <img
                 src={post.image}
                 alt="Post content"
-                className="w-full aspect-[3/4] h-auto object-cover"
+                className="w-full aspect-auto h-auto object-cover"
               />
             </div>
           )}
