@@ -201,7 +201,7 @@ function ProfilePageClient({
           </Card>
         </div>
 
-        <Tabs defaultValue="posts" className="w-3/4 mx-auto">
+        <Tabs defaultValue="posts" className="w-full mx-auto">
           <TabsList className="w-1/2 justify-start border-b rounded-none h-auto p-0 bg-transparent">
             <TabsTrigger
               value="posts"
@@ -221,8 +221,8 @@ function ProfilePageClient({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="posts" className="mt-6">
-            <div className="space-y-6">
+          <TabsContent value="posts" className="mt-6 w-full">
+            <div className="space-y-6 w-full">
               {posts.length > 0 ? (
                 posts.map((post) => (
                   <PostCard key={post.id} post={post} dbUserId={user.id} />

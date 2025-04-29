@@ -1,3 +1,5 @@
+
+
 import { currentUser } from "@clerk/nextjs/server";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
@@ -11,6 +13,7 @@ import { LinkIcon, MapPinIcon } from "lucide-react";
 const Sidemenu = async () => {
   const authUser = await currentUser();
   if (!authUser) return <UnAuthenticatedSidebar />;
+ 
 
   const user = await getUserByClerkId(authUser.id);
   if (!user) return null;

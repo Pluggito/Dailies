@@ -97,8 +97,8 @@ const PostCard = ({
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-4 sm:p-6">
+    <Card className="overflow-hidden max-w-4xl">
+      <CardContent className="p-2 sm:p-6">
         <div className="space-y-4">
           <div className="flex space-x-3 sm:space-x-4">
             <Link href={`/profile/${post.author.username}`}>
@@ -143,17 +143,17 @@ const PostCard = ({
           </div>
           {/* Post Image */}
           {post.image && (
-            <div className="rounded-lg overflow-hidden">
+            <div className="rounded-lg overflow-hidden w-full">
               <img
                 src={post.image}
                 alt="Post content"
-                className="w-full h-auto object-cover"
+                className="w-full aspect-[3/4] h-auto object-cover"
               />
             </div>
           )}
 
           {/* LIKE & COMMENT BUTTONS */}
-          <div className="flex items-center pt-2 ml-9 sm:ml-0 space-x-4">
+          <div className="flex items-center pt-2 space-x-4">
             {user ? (
               <Button
                 variant={"ghost"}
