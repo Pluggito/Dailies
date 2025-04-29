@@ -54,7 +54,7 @@ const MobileNavbar = () => {
             <SheetHeader>
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
-            <nav className="flex flex-col space-y-4 mt-6">
+            <nav className="flex flex-col space-y-4 ">
               <Button
                 variant={"ghost"}
                 className="flex items-center gap-3 justify-start"
