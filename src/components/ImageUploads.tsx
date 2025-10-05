@@ -2,7 +2,7 @@
 
 import { UploadDropzone } from "@/lib/uploadthing";
 import { XIcon } from "lucide-react";
-import Image from "next/image";
+//import Image from "next/image";
 import { Button } from "./ui/button";
 
 interface ImageUploadsProps {

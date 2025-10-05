@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+ // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
@@ -27,6 +27,7 @@ model User {
   website   String?
   createdAt DateTime @default(now()) // member since 2020
 
+
   //Relations:
   posts    Post[]
   comments Comment[]
@@ -37,6 +38,9 @@ model User {
 
   notifications        Notification[] @relation("userNotifications") //notifications received by user
   notificationsCreated Notification[] @relation("notificationCreator") //notifications triggered by a user
+
+  messages        Message[]    @relation("MessageSender")
+  chatRooms       ChatRoom[]   @relation("ChatRoomMembers")
 }
 
 model Post {
@@ -115,8 +119,29 @@ model Notification {
   @@index([userId, createdAt])
 }
 
+model ChatRoom {
+  id        String     @id @default(cuid())
+  name      String?    // Optional for 1-on-1s, useful for group chats
+  isGroup   Boolean    @default(false)
+ members   User[]   @relation("ChatRoomMembers")
+  messages  Message[]
+  createdAt DateTime   @default(now())
+}
+
+model Message {
+  id        String     @id @default(cuid())
+  content   String
+  sender    User       @relation("MessageSender", fields: [senderId], references: [id])
+  senderId  String
+  room      ChatRoom   @relation(fields: [roomId], references: [id])
+  roomId    String
+  createdAt DateTime   @default(now())
+  read      Boolean    @default(false)
+}
+
 enum NotificationType {
   LIKE
   COMMENT
   FOLLOW
+  MESSAGE
 }
