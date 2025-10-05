@@ -155,5 +155,13 @@ export async function toggleFollow(targetUserId:string){
         console.log('error in toggleFollow', error)
         return{success: false, error: 'Error toggling follow'}        
     }
+  }
 
+
+export async function getUserByUsername(username: string){
+  const userId = await getDbUserId();
+  if(!userId) return;
+  return await prisma.user.findUnique({
+    where: { username }
+  })
 }

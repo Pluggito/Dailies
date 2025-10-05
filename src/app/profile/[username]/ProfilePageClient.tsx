@@ -5,7 +5,7 @@ import {
   getUserPosts,
   updateProfile,
 } from "@/actions/profile.action";
-import { toggleFollow } from "@/actions/user.action";
+import { getDbUserId, getUserByUsername, toggleFollow } from "@/actions/user.action";
 import PostCard from "@/components/PostCard";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -31,9 +31,13 @@ import {
   HeartIcon,
   LinkIcon,
   MapPinIcon,
+  MessageCircleIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { createOrGetChatroom, } from "@/actions/chatroom.action";
+
 
 type User = Awaited<ReturnType<typeof getProfileByUsername>>;
 type Posts = Awaited<ReturnType<typeof getUserPosts>>;
@@ -45,7 +49,7 @@ interface ProfilePageClientProps {
   isFollowing: boolean;
 }
 
-function ProfilePageClient({
+export default function ProfilePageClient({
   isFollowing: initialIsFollowing,
   likedPosts,
   posts,
@@ -63,6 +67,8 @@ function ProfilePageClient({
     website: user.website || "",
   });
 
+   const router = useRouter()
+
   const handleEditSubmit = async () => {
     const formData = new FormData();
     Object.entries(editForm).forEach(([key, value]) => {
@@ -75,6 +81,8 @@ function ProfilePageClient({
       toast.success("Profile updated successfully");
     }
   };
+
+
 
   const handleFollow = async () => {
     if (!currentUser) return;
@@ -89,6 +97,38 @@ function ProfilePageClient({
       setIsUpdatingFollow(false);
     }
   };
+
+ const handlenavigatetochat = async (username: string) => {
+  if (!currentUser) return;
+
+  try {
+    const targetUser = await getUserByUsername(username);
+    if (!targetUser) {
+      toast.error("User not found");
+      return;
+    }
+
+    const currentUserId = await getDbUserId();
+    if (!currentUserId) {
+      router.push('/login');
+      return;
+    }
+
+    if (currentUserId === targetUser.id) {
+      toast.error("You can't chat with yourself");
+      return;
+    }
+
+    const roomId = await createOrGetChatroom(currentUserId, targetUser.id);
+    if (roomId) {
+      router.push(`/chatrooms/${roomId}`);
+    }
+  } catch (error) {
+    console.error("Failed to navigate to chat:", error);
+    toast.error("Could not start chat.");
+  }
+};
+
 
   const isOwnProfile =
     currentUser?.username === user.username ||
@@ -144,9 +184,10 @@ function ProfilePageClient({
 
                 {/* "FOLLOW & EDIT PROFILE" BUTTONS */}
                 {!currentUser ? (
-                  <SignInButton mode="modal">
+                    <SignInButton mode="modal">
                     <Button className="w-full mt-4">Follow</Button>
                   </SignInButton>
+                  
                 ) : isOwnProfile ? (
                   <Button
                     className="w-full mt-4"
@@ -156,14 +197,36 @@ function ProfilePageClient({
                     Edit Profile
                   </Button>
                 ) : (
-                  <Button
-                    className="w-full mt-4"
+                  <div className="items-center flex  w-full">
+                  <div className="mx-auto items-center gap-3 flex w-full">
+                     <Button
+                    className={`${isFollowing ? "w-[75%]" : "w-full"}`}
                     onClick={handleFollow}
                     disabled={isUpdatingFollow}
                     variant={isFollowing ? "outline" : "default"}
                   >
-                    {isFollowing ? "Unfollow" : "Follow"}
+                    {isFollowing ? (
+                        "Unfollow"
+                     
+                    ) : (
+                      "Follow"
+                    )}
                   </Button>
+                  
+                  <Button
+                  className={`${isFollowing ? 'w-[20%]' : ''}`}                  
+                    disabled={isUpdatingFollow}
+                    variant={isFollowing ? "outline" : "ghost"}
+                    onClick={() => handlenavigatetochat(user.username)}
+                    style={{ visibility: isFollowing ? "visible" : "hidden" }}>
+                      {isFollowing ? (
+                        <MessageCircleIcon/>
+                    ) : (
+                      " "
+                    )}
+                  </Button>
+                  </div>
+                  </div>
                 )}
 
                 {/* LOCATION & WEBSITE */}
@@ -314,4 +377,5 @@ function ProfilePageClient({
     </div>
   );
 }
-export default ProfilePageClient;
+
+
