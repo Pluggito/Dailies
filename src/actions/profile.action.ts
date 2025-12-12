@@ -60,7 +60,7 @@ export async function getUserPosts(userId: string) {
             },
           },
           orderBy: {
-            createAt: "asc",
+            createdAt: "asc",
           },
         },
         likes: {
@@ -118,7 +118,7 @@ export async function getUserLikedPosts(userId: string) {
             },
           },
           orderBy: {
-            createAt: "asc",
+            createdAt: "asc",
           },
         },
         likes: {

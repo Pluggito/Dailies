@@ -36,7 +36,7 @@ export async function getNotifications() {
                     select: {
                         id: true,
                         content: true,
-                        createAt: true, // Note: is this a typo? Should it be 'createdAt'?
+                        createdAt: true,
                     }
                 }
             }
