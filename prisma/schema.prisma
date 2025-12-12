@@ -5,14 +5,12 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -39,8 +37,8 @@ model User {
   notifications        Notification[] @relation("userNotifications") //notifications received by user
   notificationsCreated Notification[] @relation("notificationCreator") //notifications triggered by a user
 
-  messages        Message[]    @relation("MessageSender")
-  chatRooms       ChatRoom[]   @relation("ChatRoomMembers")
+  messages        Message[]
+  members         ChatMember[]
 }
 
 model Post {
@@ -63,7 +61,7 @@ model Comment {
   content  String
   authorId String
   postId   String
-  createAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
   //Relations
   author       User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -120,23 +118,54 @@ model Notification {
 }
 
 model ChatRoom {
-  id        String     @id @default(cuid())
-  name      String?    // Optional for 1-on-1s, useful for group chats
-  isGroup   Boolean    @default(false)
- members   User[]   @relation("ChatRoomMembers")
+  id        String   @id @default(cuid())
+  type      String   @default("direct") // "direct" | "group"
+  name      String?  // optional for groups, null for direct chats
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members   ChatMember[]
   messages  Message[]
-  createdAt DateTime   @default(now())
 }
 
+model ChatMember {
+  id        String   @id @default(cuid())
+  userId    String
+  chatRoomId String
+  joinedAt  DateTime @default(now())
+  lastReadAt DateTime? // tracks last time member read messages in the chat
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chatRoomId]) // prevent duplicate memberships
+}
+
+
 model Message {
-  id        String     @id @default(cuid())
-  content   String
-  sender    User       @relation("MessageSender", fields: [senderId], references: [id])
-  senderId  String
-  room      ChatRoom   @relation(fields: [roomId], references: [id])
-  roomId    String
-  createdAt DateTime   @default(now())
-  read      Boolean    @default(false)
+  id        String   @id @default(cuid())
+  chatRoomId String
+  userId    String
+ content    String? // for text content; can be null for audio/image messages
+ type       MessageType @default(TEXT)
+mediaUrl    String? // URL to audio/image if applicable
+duration    Int? // optional audio duration in seconds
+readers     String[] @default([]) // userIds who have read this message (Postgres text[])
+  createdAt DateTime @default(now())
+  system     Boolean  @default(false)
+
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([chatRoomId])
+  @@index([userId])
+}
+
+enum MessageType {
+  TEXT
+  AUDIO
+  IMAGE
+  SYSTEM
 }
 
 enum NotificationType {

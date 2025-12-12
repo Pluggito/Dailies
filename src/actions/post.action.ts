@@ -53,7 +53,7 @@ export async function getPosts() {
             },
           },
           orderBy:{
-            createAt: "asc",
+            createdAt: "asc",
           }
         },
         likes:{
