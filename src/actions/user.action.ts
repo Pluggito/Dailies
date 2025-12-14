@@ -67,7 +67,7 @@ export async function getRandomUsers() {
   try {
     const userId = await getDbUserId();
 
-    if(!userId) return []
+    if (!userId) return [];
 
     const randomUsers = await prisma.user.findMany({
       where: {
@@ -83,85 +83,126 @@ export async function getRandomUsers() {
             },
           },
         ],
-      }, 
-      select:{
+      },
+      select: {
         id: true,
         name: true,
         username: true,
         image: true,
-        _count:{
-            select:{
-                followers: true,
-            },           
-        }
-      }, take: 3
+        _count: {
+          select: {
+            followers: true,
+          },
+        },
+      },
+      take: 3,
     });
     return randomUsers;
   } catch (error) {
-    console.error('failed to get Users', error)
-    return[]
+    console.error("failed to get Users", error);
+    return [];
   }
 }
 
+export async function toggleFollow(targetUserId: string) {
+  try {
+    const userId = await getDbUserId();
 
-export async function toggleFollow(targetUserId:string){
-    try {
-        const userId = await getDbUserId();
+    if (!userId) return;
 
-        if(!userId) return;
+    if (userId === targetUserId) throw new Error("You cant follow yourelf");
 
-        if(userId === targetUserId ) throw new Error('You cant follow yourelf')
+    const existingFollow = await prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: userId,
+          followingId: targetUserId,
+        },
+      },
+    });
 
-            const existingFollow = await prisma.follows.findUnique({
-                where:{
-                    followerId_followingId:{
-                        followerId: userId,
-                        followingId: targetUserId
-                    }
-                }
-            })
-
-            if(existingFollow){
-                //follow
-                await prisma.follows.delete({
-                    where:{
-                        followerId_followingId:{
-                            followerId: userId,
-                            followingId: targetUserId
-                        }
-                    }
-                })
-            }else{
-                // follow
-                await prisma.$transaction([ 
-                    prisma.follows.create({
-                        data:{
-                            followerId: userId,
-                            followingId: targetUserId
-                        }
-                    }),
-                    prisma.notification.create({
-                        data:{
-                            type: 'FOLLOW',
-                            userId: targetUserId,
-                            creatorId: userId
-                        }
-                    })
-                ])
-            }
-
-            return{success: true}
-    } catch (error) {
-        console.log('error in toggleFollow', error)
-        return{success: false, error: 'Error toggling follow'}        
+    if (existingFollow) {
+      //follow
+      await prisma.follows.delete({
+        where: {
+          followerId_followingId: {
+            followerId: userId,
+            followingId: targetUserId,
+          },
+        },
+      });
+    } else {
+      // follow
+      await prisma.$transaction([
+        prisma.follows.create({
+          data: {
+            followerId: userId,
+            followingId: targetUserId,
+          },
+        }),
+        prisma.notification.create({
+          data: {
+            type: "FOLLOW",
+            userId: targetUserId,
+            creatorId: userId,
+          },
+        }),
+      ]);
     }
+
+    return { success: true };
+  } catch (error) {
+    console.log("error in toggleFollow", error);
+    return { success: false, error: "Error toggling follow" };
   }
+}
 
-
-export async function getUserByUsername(username: string){
+export async function getUserByUsername(username: string) {
   const userId = await getDbUserId();
-  if(!userId) return;
+  if (!userId) return;
   return await prisma.user.findUnique({
-    where: { username }
-  })
+    where: { username },
+  });
+}
+
+export async function getFollowers() {
+  const userId = await getDbUserId();
+  if (!userId) return [];
+
+  const followers = await prisma.follows.findMany({
+    where: {
+      followingId: userId,
+    },
+    include: {
+      follower: true,
+    },
+  });
+
+  return followers.map((f) => f.follower);
+}
+
+export async function getChatMessages(chatRoomId: string) {
+  const userId = await getDbUserId();
+  if (!userId) return [];
+
+  const messages = await prisma.message.findMany({
+    where: {
+      chatRoomId,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          image: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+
+  return messages;
 }

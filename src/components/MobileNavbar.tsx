@@ -1,45 +1,58 @@
-"use client"
+"use client";
 
-import { BellIcon, HomeIcon, LogOutIcon, MenuIcon, UserIcon } from "lucide-react"
-import { Button } from "./ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"
-import { useState, useEffect } from "react"
-import { SignInButton, SignOutButton, useUser, useAuth } from "@clerk/nextjs"
-import ModeToggle from "./ModeToggle"
-import { useRouter, usePathname } from "next/navigation"
-import Loader from "./Loader"
+import {
+  BellIcon,
+  HomeIcon,
+  MessageCircle,
+  LogOutIcon,
+  MenuIcon,
+  UserIcon,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
+import { useState, useEffect } from "react";
+import { SignInButton, SignOutButton, useUser, useAuth } from "@clerk/nextjs";
+import ModeToggle from "./ModeToggle";
+import { useRouter, usePathname } from "next/navigation";
+import Loader from "./Loader";
 
 const MobileNavbar = () => {
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const { isSignedIn } = useAuth()
-  const { user } = useUser()
-  const router = useRouter()
-  const pathname = usePathname()
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Reset loading state when pathname changes (navigation completes)
   useEffect(() => {
-    setIsLoading(false)
-  }, [pathname])
+    setIsLoading(false);
+  }, [pathname]);
 
   const getProfileLink = () => {
-    if (!user) return "/profile"
+    if (!user) return "/profile";
 
-    const username = user.username
-    const emailPrefix = user.emailAddresses?.[0]?.emailAddress.split("@")[0]
-    return `/profile/${username ?? emailPrefix ?? "user"}`
-  }
+    const username = user.username;
+    const emailPrefix = user.emailAddresses?.[0]?.emailAddress.split("@")[0];
+    return `/profile/${username ?? emailPrefix ?? "user"}`;
+  };
 
   // Handle navigation with loading state
   const handleNavigation = (path: string) => {
-    setIsLoading(true)
-    setShowMobileMenu(false)
-    router.push(path)
-  }
+    setIsLoading(true);
+    setShowMobileMenu(false);
+    router.push(path);
+  };
 
   return (
     <>
-      {isLoading && <Loader/>}
+      {isLoading && <Loader />}
 
       <div className="flex md:hidden items-center space-x-2">
         <ModeToggle />
@@ -78,6 +91,15 @@ const MobileNavbar = () => {
                   <Button
                     variant={"ghost"}
                     className="flex items-center gap-3 justify-start"
+                    onClick={() => handleNavigation("/chat")}
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Messages
+                  </Button>
+
+                  <Button
+                    variant={"ghost"}
+                    className="flex items-center gap-3 justify-start"
                     onClick={() => handleNavigation(getProfileLink())}
                   >
                     <UserIcon className="w-4 h-4" />
@@ -97,7 +119,11 @@ const MobileNavbar = () => {
                 </>
               ) : (
                 <SignInButton>
-                  <Button variant={"default"} className="w-full" onClick={() => setShowMobileMenu(false)}>
+                  <Button
+                    variant={"default"}
+                    className="w-full"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
                     Sign In
                   </Button>
                 </SignInButton>
@@ -107,7 +133,7 @@ const MobileNavbar = () => {
         </Sheet>
       </div>
     </>
-  )
-}
+  );
+};
 
-export default MobileNavbar
+export default MobileNavbar;

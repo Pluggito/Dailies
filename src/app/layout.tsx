@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
-//import { Inter } from "next/font/google";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Sidemenu from "@/components/Sidemenu";
 import { Toaster } from "@/components/ui/sonner";
+import LayoutWrapper from "@/components/LayoutWrapper";
 import { Pacifico } from "next/font/google";
+import { WebSocketInitializer } from "@/components/WebSocketInitializer";
 
-// Importing the font and setting the variable to use globally
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
@@ -34,16 +35,18 @@ export const metadata: Metadata = {
   description: "Social media application powered by next.js",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { userId } = await auth();
+
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body
-          className={`${spaceGrotesk.variable} ${pacifico.variable} ${poppins} antialiased`}
+          className={`${spaceGrotesk.variable} ${pacifico.variable} ${poppins.variable} antialiased`}
         >
           <ThemeProvider
             attribute="class"
@@ -51,18 +54,15 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <WebSocketInitializer userId={userId || undefined} />
             <div className="min-h-screen">
               <Navbar />
 
               <main className="py-8">
-                {/* container to center component */}
                 <div className="max-w-7xl mx-auto px-4">
-                  <div className="grid grid-cols-1 lg:grid-cols-12">
-                    <div className="hidden lg:block lg:col-span-3">
-                      <Sidemenu />
-                    </div>
-                    <div className="lg:col-span-9">{children}</div>
-                  </div>
+                  <LayoutWrapper sidemenu={<Sidemenu />}>
+                    {children}
+                  </LayoutWrapper>
                 </div>
               </main>
             </div>
@@ -73,5 +73,3 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
-
-/*</ThemeProvider>*/

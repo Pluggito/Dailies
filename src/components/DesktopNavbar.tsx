@@ -1,47 +1,61 @@
-import { currentUser } from '@clerk/nextjs/server'
-import React from 'react'
-import { Button } from './ui/button'
-import Link from 'next/link'
-import { BellIcon, HomeIcon,  UserIcon} from 'lucide-react'
-import { SignUpButton, UserButton } from '@clerk/nextjs'
-import ModeToggle from './ModeToggle'
+import { currentUser } from "@clerk/nextjs/server";
+import React from "react";
+import { Button } from "./ui/button";
+import Link from "next/link";
+import { BellIcon, HomeIcon, UserIcon, MessageCircle } from "lucide-react";
+import { SignUpButton, UserButton } from "@clerk/nextjs";
+import ModeToggle from "./ModeToggle";
 
-const DesktopNavbar = async() => {
-    const user = await currentUser()
+const DesktopNavbar = async () => {
+  const user = await currentUser();
   return (
-    <div className='hidden md:flex items-center space-x-4 '>
-        <ModeToggle/>
+    <div className="hidden md:flex items-center space-x-4 ">
+      <ModeToggle />
 
-        <Button variant={'ghost'} className='flex items-center gap-2 'asChild>
-            <Link href='/'>
-            <HomeIcon className='w-4 h-4'/>
-            <span className='hidden lg:inline'>Home</span>
+      <Button variant={"ghost"} className="flex items-center gap-2 " asChild>
+        <Link href="/">
+          <HomeIcon className="w-4 h-4" />
+          <span className="hidden lg:inline">Home</span>
+        </Link>
+      </Button>
+
+      {user ? (
+        <>
+          <Button variant={"ghost"} className="flex items-center gap-2" asChild>
+            <Link href="/notifications">
+              <BellIcon className="w-4 h-4" />
+              <span className="hidden lg:inline">Notifications</span>
             </Link>
-        </Button>  
-
-        {user ? (
-            <>
-            <Button variant={'ghost'} className='flex items-center gap-2' asChild>
-                <Link href="/notifications">
-                <BellIcon className='w-4 h-4'/><span className='hidden lg:inline'>Notifications</span>
-                </Link>
-            </Button>
-            <Button variant='ghost' className='flex items-center gap-2'>
-                <Link
-                href={`/profile/${user.username ?? user.emailAddresses[0].emailAddress.split('@')[0]}`} className='flex items-center gap-2'>
-                    <UserIcon className='w-4 h-4'/>
-                    <span className='hidden lg:inline'>Profile</span>
-                </Link>
-            </Button>
-            <UserButton/>
-            </>
-        ): (
-            <SignUpButton mode="modal">
-            <Button variant={'default'} className="cursor-pointer">Sign in</Button>
-            </SignUpButton>
-        )}
+          </Button>
+          <Button variant={"ghost"} className="flex items-center gap-2" asChild>
+            <Link href="/chat">
+              <MessageCircle className="w-4 h-4" />
+              Messages
+            </Link>
+          </Button>
+          <Button variant="ghost" className="flex items-center gap-2" asChild>
+            <Link
+              href={`/profile/${
+                user.username ??
+                user.emailAddresses[0].emailAddress.split("@")[0]
+              }`}
+              className="flex items-center gap-2"
+            >
+              <UserIcon className="w-4 h-4" />
+              <span className="hidden lg:inline">Profile</span>
+            </Link>
+          </Button>
+          <UserButton />
+        </>
+      ) : (
+        <SignUpButton mode="modal">
+          <Button variant={"default"} className="cursor-pointer">
+            Sign in
+          </Button>
+        </SignUpButton>
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default DesktopNavbar
+export default DesktopNavbar;
