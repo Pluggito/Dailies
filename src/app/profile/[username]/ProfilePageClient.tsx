@@ -5,11 +5,7 @@ import {
   getUserPosts,
   updateProfile,
 } from "@/actions/profile.action";
-import {
-  getDbUserId,
-  getUserByUsername,
-  toggleFollow,
-} from "@/actions/user.action";
+import { toggleFollow } from "@/actions/user.action";
 import PostCard from "@/components/PostCard";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";

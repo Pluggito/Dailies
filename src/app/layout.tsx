@@ -3,7 +3,6 @@ import { Space_Grotesk } from "next/font/google";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import { auth } from "@clerk/nextjs/server";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Sidemenu from "@/components/Sidemenu";
@@ -40,8 +39,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { userId } = await auth();
-
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
@@ -54,10 +51,9 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <WebSocketInitializer userId={userId || undefined} />
+            <WebSocketInitializer />
             <div className="min-h-screen">
               <Navbar />
-
               <main className="py-8">
                 <div className="max-w-7xl mx-auto px-4">
                   <LayoutWrapper sidemenu={<Sidemenu />}>

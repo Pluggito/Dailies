@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { io, Socket } from "socket.io-client";
 
 interface Message {
   id: string;
@@ -23,9 +24,11 @@ interface Message {
 interface WebSocketState {
   // Connection state
   ws: WebSocket | null;
+  socketIO: Socket | null;
   isConnected: boolean;
   userId: string | null;
   reconnectAttempts: number;
+  connectionType: "websocket" | "socketio" | null;
 
   // Event handlers
   eventHandlers: Map<string, Set<(payload: any) => void>>;
@@ -41,6 +44,7 @@ interface WebSocketState {
   // Internal actions
   setConnected: (connected: boolean) => void;
   setWebSocket: (ws: WebSocket | null) => void;
+  setSocketIO: (socket: Socket | null) => void;
   incrementReconnectAttempts: () => void;
   resetReconnectAttempts: () => void;
 }
@@ -48,132 +52,112 @@ interface WebSocketState {
 const MAX_RECONNECT_ATTEMPTS = 5;
 let reconnectTimeout: NodeJS.Timeout | null = null;
 
+// Determine connection type based on environment
+const useSocketIO = () => {
+  // Use Socket.IO in production (when connecting to Express backend)
+  // Use WebSocket in development (local WS server)
+  const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8080";
+  return !wsUrl.includes("localhost") && !wsUrl.includes("8080");
+};
+
 export const useWebSocketStore = create<WebSocketState>()(
   devtools(
     (set, get) => ({
       ws: null,
+      socketIO: null,
       isConnected: false,
       userId: null,
       reconnectAttempts: 0,
+      connectionType: null,
       eventHandlers: new Map(),
 
       connect: (userId: string) => {
-        const { ws, isConnected } = get();
+        const { ws, socketIO, isConnected } = get();
 
         // Don't reconnect if already connected
-        if (ws?.readyState === WebSocket.OPEN && isConnected) {
-          // console.log("WebSocket already connected");
+        if (isConnected) {
+          console.log("Already connected");
           return;
         }
 
-        // Close existing connection
-        if (ws) {
-          ws.close();
-        }
+        // Close existing connections
+        if (ws) ws.close();
+        if (socketIO) socketIO.disconnect();
 
         try {
-          // console.log("🔌 Connecting to WebSocket...");
-          const websocketUrl =
+          const wsUrl =
             process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8080";
-          const newWs = new WebSocket(`${websocketUrl}?userId=${userId}`);
+          const shouldUseSocketIO = useSocketIO();
 
-          newWs.onopen = () => {
-            // console.log("✅ WebSocket connected");
-            set({ isConnected: true, userId });
-            get().resetReconnectAttempts();
-          };
+          console.log("🔌 Connecting to:", wsUrl);
+          console.log(
+            "📡 Connection type:",
+            shouldUseSocketIO ? "Socket.IO" : "WebSocket"
+          );
 
-          newWs.onmessage = (event: MessageEvent) => {
-            try {
-              const message = JSON.parse(event.data);
-              // console.log("📨 WebSocket message:", message.type);
-
-              const handlers = get().eventHandlers.get(message.type);
-              if (handlers) {
-                handlers.forEach((handler) => {
-                  try {
-                    handler(message.payload);
-                  } catch (error) {
-                    console.error("Error in message handler:", error);
-                  }
-                });
-              }
-            } catch (error) {
-              console.error("Error parsing WebSocket message:", error);
-            }
-          };
-
-          newWs.onerror = (error) => {
-            // console.error("❌ WebSocket error:", error);
-          };
-
-          newWs.onclose = (event) => {
-            // console.log("❌ WebSocket closed:", event.code, event.reason);
-            set({ isConnected: false });
-
-            // Attempt reconnection
-            const { reconnectAttempts } = get();
-            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-              const delay = Math.min(
-                1000 * Math.pow(2, reconnectAttempts),
-                30000
-              );
-              // console.log(
-              //   `Reconnecting in ${delay}ms... (attempt ${
-              //     reconnectAttempts + 1
-              //   }/${MAX_RECONNECT_ATTEMPTS})`
-              // );
-
-              reconnectTimeout = setTimeout(() => {
-                get().incrementReconnectAttempts();
-                get().connect(userId);
-              }, delay);
-            } else {
-              // console.error("Max reconnection attempts reached");
-            }
-          };
-
-          set({ ws: newWs });
+          if (shouldUseSocketIO) {
+            // Use Socket.IO for production (Express backend)
+            connectWithSocketIO(userId, wsUrl, set, get);
+          } else {
+            // Use WebSocket for development (local WS server)
+            connectWithWebSocket(userId, wsUrl, set, get);
+          }
         } catch (error) {
-          console.error("Error creating WebSocket:", error);
+          console.error("Error creating connection:", error);
         }
       },
 
       disconnect: () => {
-        const { ws } = get();
+        const { ws, socketIO } = get();
         if (reconnectTimeout) {
           clearTimeout(reconnectTimeout);
           reconnectTimeout = null;
         }
         if (ws) {
           ws.close();
-          set({ ws: null, isConnected: false, userId: null });
+          set({ ws: null });
         }
+        if (socketIO) {
+          socketIO.disconnect();
+          set({ socketIO: null });
+        }
+        set({ isConnected: false, userId: null, connectionType: null });
       },
 
       send: (type: string, payload: any) => {
-        const { ws, isConnected } = get();
-        if (ws && ws.readyState === WebSocket.OPEN && isConnected) {
+        const { ws, socketIO, isConnected, connectionType } = get();
+
+        if (!isConnected) {
+          console.warn("⚠️ Not connected. Cannot send:", type);
+          return;
+        }
+
+        if (connectionType === "socketio" && socketIO?.connected) {
+          // Socket.IO uses emit
+          socketIO.emit(type, payload);
+          console.log("📤 Sent (Socket.IO):", type);
+        } else if (
+          connectionType === "websocket" &&
+          ws?.readyState === WebSocket.OPEN
+        ) {
+          // WebSocket uses send
           const message = JSON.stringify({ type, payload });
           ws.send(message);
-          console.log("📤 Sent:", type);
+          console.log("📤 Sent (WebSocket):", type);
         } else {
-          // console.warn("WebSocket not connected. Cannot send:", type);
+          console.warn("⚠️ Connection not ready. Cannot send:", type);
         }
       },
 
-      // In your store, update the on/off methods:
       on: (type: string, handler: (payload: any) => void) => {
         const { eventHandlers } = get();
         if (!eventHandlers.has(type)) {
           eventHandlers.set(type, new Set());
         }
 
-        // Store the original handler reference
         eventHandlers.get(type)?.add(handler);
-        // console.log(`👂 Registered handler for: ${type}`);
+        console.log(`👂 Registered handler for: ${type}`);
 
-        // Return cleanup function
         return () => {
           const handlers = eventHandlers.get(type);
           if (handlers) {
@@ -193,13 +177,13 @@ export const useWebSocketStore = create<WebSocketState>()(
           if (handlers.size === 0) {
             eventHandlers.delete(type);
           }
-          // console.log(`🔇 Unregistered handler for: ${type}`);
+          console.log(`🔇 Unregistered handler for: ${type}`);
         }
       },
 
       reconnect: () => {
         const { userId, disconnect, connect } = get();
-        // console.log("Manual reconnect triggered");
+        console.log("🔄 Manual reconnect triggered");
         disconnect();
         if (userId) {
           set({ reconnectAttempts: 0 });
@@ -209,6 +193,7 @@ export const useWebSocketStore = create<WebSocketState>()(
 
       setConnected: (connected: boolean) => set({ isConnected: connected }),
       setWebSocket: (ws: WebSocket | null) => set({ ws }),
+      setSocketIO: (socket: Socket | null) => set({ socketIO: socket }),
       incrementReconnectAttempts: () =>
         set((state) => ({ reconnectAttempts: state.reconnectAttempts + 1 })),
       resetReconnectAttempts: () => set({ reconnectAttempts: 0 }),
@@ -217,6 +202,119 @@ export const useWebSocketStore = create<WebSocketState>()(
   )
 );
 
+// ==================== Socket.IO Connection ====================
+function connectWithSocketIO(userId: string, url: string, set: any, get: any) {
+  console.log("🔌 Connecting with Socket.IO...");
+
+  // Convert ws:// or wss:// to http:// or https://
+  const httpUrl = url.replace(/^ws/, "http");
+
+  const socket = io(httpUrl, {
+    query: { userId },
+    transports: ["websocket"],
+    reconnection: true,
+    reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+    reconnectionDelay: 1000,
+    path: "/socket.io/",
+  });
+
+  socket.on("connect", () => {
+    console.log("✅ Socket.IO connected");
+    set({ isConnected: true, userId, connectionType: "socketio" });
+    get().resetReconnectAttempts();
+  });
+
+  socket.on("disconnect", (reason) => {
+    console.log("❌ Socket.IO disconnected:", reason);
+    set({ isConnected: false });
+  });
+
+  socket.on("connect_error", (error) => {
+    console.error("❌ Socket.IO connection error:", error);
+  });
+
+  // Register all event handlers
+  const handlers = get().eventHandlers;
+  handlers.forEach(
+    (handlerSet: Set<(payload: any) => void>, eventType: string) => {
+      socket.on(eventType, (payload: any) => {
+        console.log("📨 Socket.IO message:", eventType);
+        handlerSet.forEach((handler) => {
+          try {
+            handler(payload);
+          } catch (error) {
+            console.error("Error in Socket.IO handler:", error);
+          }
+        });
+      });
+    }
+  );
+
+  set({ socketIO: socket });
+}
+
+// ==================== WebSocket Connection ====================
+function connectWithWebSocket(userId: string, url: string, set: any, get: any) {
+  console.log("🔌 Connecting with WebSocket...");
+
+  const newWs = new WebSocket(`${url}?userId=${userId}`);
+
+  newWs.onopen = () => {
+    console.log("✅ WebSocket connected");
+    set({ isConnected: true, userId, connectionType: "websocket" });
+    get().resetReconnectAttempts();
+  };
+
+  newWs.onmessage = (event: MessageEvent) => {
+    try {
+      const message = JSON.parse(event.data);
+      console.log("📨 WebSocket message:", message.type);
+
+      const handlers = get().eventHandlers.get(message.type);
+      if (handlers) {
+        handlers.forEach((handler: (payload: any) => void) => {
+          try {
+            handler(message.payload);
+          } catch (error) {
+            console.error("Error in WebSocket handler:", error);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error parsing WebSocket message:", error);
+    }
+  };
+
+  newWs.onerror = (error) => {
+    console.error("❌ WebSocket error:", error);
+  };
+
+  newWs.onclose = (event) => {
+    console.log("❌ WebSocket closed:", event.code, event.reason);
+    set({ isConnected: false });
+
+    // Attempt reconnection
+    const { reconnectAttempts } = get();
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+      console.log(
+        `🔄 Reconnecting in ${delay}ms... (attempt ${
+          reconnectAttempts + 1
+        }/${MAX_RECONNECT_ATTEMPTS})`
+      );
+
+      reconnectTimeout = setTimeout(() => {
+        get().incrementReconnectAttempts();
+        get().connect(userId);
+      }, delay);
+    } else {
+      console.error("❌ Max reconnection attempts reached");
+    }
+  };
+
+  set({ ws: newWs });
+}
+
 // Convenience selectors
 export const useWebSocketConnection = () =>
   useWebSocketStore((state) => ({
@@ -224,6 +322,7 @@ export const useWebSocketConnection = () =>
     connect: state.connect,
     disconnect: state.disconnect,
     reconnect: state.reconnect,
+    connectionType: state.connectionType,
   }));
 
 export const useWebSocketSend = () => useWebSocketStore((state) => state.send);

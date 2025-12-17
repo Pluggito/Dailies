@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { useWebSocketStore } from "@/store/useWebSocketStore";
 
-interface WebSocketInitializerProps {
-  userId?: string;
-}
-
-export function WebSocketInitializer({ userId }: WebSocketInitializerProps) {
+export function WebSocketInitializer() {
+  const { userId, isLoaded } = useAuth();
   const connect = useWebSocketStore((state) => state.connect);
   const disconnect = useWebSocketStore((state) => state.disconnect);
 
   useEffect(() => {
+    if (!isLoaded) return;
+
     if (userId) {
       connect(userId);
     }
@@ -19,7 +19,7 @@ export function WebSocketInitializer({ userId }: WebSocketInitializerProps) {
     return () => {
       disconnect();
     };
-  }, [userId, connect, disconnect]);
+  }, [userId, isLoaded, connect, disconnect]);
 
-  return null; // This component doesn't render anything
+  return null;
 }
