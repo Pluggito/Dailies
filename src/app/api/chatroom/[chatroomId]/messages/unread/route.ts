@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getUserByClerkId } from "@/actions/user.action";
 
 /**
  * GET /api/chatroom/[chatroomId]/messages/unread
@@ -29,7 +28,9 @@ export async function GET(
     }
 
     // Get actual database user ID from Clerk ID
-    const dbUser = await getUserByClerkId(String(userId));
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
 
     if (!dbUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -93,7 +94,9 @@ export async function POST(
     }
 
     // Get actual database user ID from Clerk ID
-    const dbUser = await getUserByClerkId(String(userId));
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
 
     if (!dbUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
