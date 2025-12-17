@@ -13,6 +13,7 @@ interface Conversation {
   timestamp: Date;
   unread: number;
   online: boolean;
+  image?: string;
 }
 
 interface ChatListProps {
@@ -77,12 +78,20 @@ export default function ChatList({
           >
             <div className="relative shrink-0">
               <Avatar className="size-12">
-                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-violet-600 text-white font-medium">
-                  {conv.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
+                {conv.image ? (
+                  <img
+                    src={conv.image}
+                    alt={conv.name}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-violet-600 text-white font-medium">
+                    {conv.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                )}
               </Avatar>
               {conv.online && (
                 <span className="absolute bottom-0 right-0 size-3 bg-green-500 rounded-full border-2 border-card" />
