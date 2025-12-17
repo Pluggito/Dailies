@@ -68,6 +68,15 @@ export default function ProfilePageClient({
 
   const router = useRouter();
 
+  // Filter out posts with missing data to prevent rendering errors
+  const validPosts = posts.filter(
+    (post) => post && post.author && post.author.username && post.id
+  );
+
+  const validLikedPosts = likedPosts.filter(
+    (post) => post && post.author && post.author.username && post.id
+  );
+
   const handleEditSubmit = async () => {
     const formData = new FormData();
     Object.entries(editForm).forEach(([key, value]) => {
@@ -78,6 +87,9 @@ export default function ProfilePageClient({
     if (result.success) {
       setShowEditDialog(false);
       toast.success("Profile updated successfully");
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to update profile");
     }
   };
 
@@ -88,7 +100,11 @@ export default function ProfilePageClient({
       setIsUpdatingFollow(true);
       await toggleFollow(user.id);
       setIsFollowing(!isFollowing);
-    } catch {
+      toast.success(
+        isFollowing ? "Unfollowed successfully" : "Followed successfully"
+      );
+    } catch (error) {
+      console.error("Follow error:", error);
       toast.error("Failed to update follow status");
     } finally {
       setIsUpdatingFollow(false);
@@ -113,7 +129,7 @@ export default function ProfilePageClient({
                   {user.name ?? user.username}
                 </h1>
                 <p className="text-muted-foreground">@{user.username}</p>
-                <p className="mt-2 text-sm">{user.bio}</p>
+                {user.bio && <p className="mt-2 text-sm">{user.bio}</p>}
 
                 {/* PROFILE STATS */}
                 <div className="w-full mt-6">
@@ -159,7 +175,7 @@ export default function ProfilePageClient({
                     Edit Profile
                   </Button>
                 ) : (
-                  <div className="items-center flex  w-full">
+                  <div className="items-center flex w-full">
                     <div className="mx-auto items-center gap-3 flex w-full">
                       <Button
                         className={`${isFollowing ? "w-[75%]" : "w-full"}`}
@@ -170,17 +186,16 @@ export default function ProfilePageClient({
                         {isFollowing ? "Unfollow" : "Follow"}
                       </Button>
 
-                      <Button
-                        className={`${isFollowing ? "w-[20%]" : ""}`}
-                        disabled={isUpdatingFollow}
-                        variant={isFollowing ? "outline" : "ghost"}
-                        onClick={() => router.push(`/chat?userId=${user.id}`)}
-                        style={{
-                          visibility: isFollowing ? "visible" : "hidden",
-                        }}
-                      >
-                        {isFollowing ? <MessageCircleIcon /> : " "}
-                      </Button>
+                      {isFollowing && (
+                        <Button
+                          className="w-[20%]"
+                          disabled={isUpdatingFollow}
+                          variant="outline"
+                          onClick={() => router.push(`/chat?userId=${user.id}`)}
+                        >
+                          <MessageCircleIcon className="size-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -242,8 +257,8 @@ export default function ProfilePageClient({
 
           <TabsContent value="posts" className="mt-6 w-full">
             <div className="space-y-6 w-full">
-              {posts.length > 0 ? (
-                posts.map((post) => (
+              {validPosts.length > 0 ? (
+                validPosts.map((post) => (
                   <PostCard key={post.id} post={post} dbUserId={user.id} />
                 ))
               ) : (
@@ -256,8 +271,8 @@ export default function ProfilePageClient({
 
           <TabsContent value="likes" className="mt-6">
             <div className="space-y-6">
-              {likedPosts.length > 0 ? (
-                likedPosts.map((post) => (
+              {validLikedPosts.length > 0 ? (
+                validLikedPosts.map((post) => (
                   <PostCard key={post.id} post={post} dbUserId={user.id} />
                 ))
               ) : (
