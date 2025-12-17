@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getUserByClerkId } from "@/actions/user.action";
 
 /**
  * GET /api/chatroom/[chatroomId]/messages
@@ -161,7 +160,10 @@ export async function POST(
     console.log("✅ Chat room exists:", chatRoomId);
 
     // Get the actual database user ID from Clerk ID
-    const dbUser = await getUserByClerkId(String(senderId));
+    const dbUser = await prisma.user.findUnique({
+      where: { id: senderId },
+    });
+    // = await getUserByClerkId(String(senderId));
 
     if (!dbUser) {
       console.error("❌ User not found in database:", senderId);
