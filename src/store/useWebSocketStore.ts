@@ -74,7 +74,7 @@ export const useWebSocketStore = create<WebSocketState>()(
 
         // Don't reconnect if already connected
         if (isConnected) {
-          console.log("Already connected");
+          // console.log("Already connected");
           return;
         }
 
@@ -85,14 +85,14 @@ export const useWebSocketStore = create<WebSocketState>()(
           const wsUrl = getWebSocketUrl();
 
           if (!wsUrl) {
-            console.error("❌ WebSocket URL not configured");
+            // console.error("❌ WebSocket URL not configured");
             return;
           }
 
-          console.log("🔌 Connecting to:", wsUrl);
+          // console.log("🔌 Connecting to:", wsUrl);
           connectWithWebSocket(userId, wsUrl, set, get);
         } catch (error) {
-          console.error("Error creating connection:", error);
+          // console.error("Error creating connection:", error);
         }
       },
 
@@ -113,13 +113,13 @@ export const useWebSocketStore = create<WebSocketState>()(
         const { ws, isConnected } = get();
 
         if (!isConnected || ws?.readyState !== WebSocket.OPEN) {
-          console.warn("⚠️ Not connected. Cannot send:", type);
+          // console.warn("⚠️ Not connected. Cannot send:", type);
           return;
         }
 
         const message = JSON.stringify({ type, payload });
         ws.send(message);
-        console.log("📤 Sent:", type);
+        // console.log("📤 Sent:", type);
       },
 
       on: (type: string, handler: (payload: any) => void) => {
@@ -129,7 +129,7 @@ export const useWebSocketStore = create<WebSocketState>()(
         }
 
         eventHandlers.get(type)?.add(handler);
-        console.log(`👂 Registered handler for: ${type}`);
+        // console.log(`👂 Registered handler for: ${type}`);
 
         return () => {
           const handlers = eventHandlers.get(type);
@@ -150,13 +150,13 @@ export const useWebSocketStore = create<WebSocketState>()(
           if (handlers.size === 0) {
             eventHandlers.delete(type);
           }
-          console.log(`🔇 Unregistered handler for: ${type}`);
+          // console.log(`🔇 Unregistered handler for: ${type}`);
         }
       },
 
       reconnect: () => {
         const { userId, disconnect, connect } = get();
-        console.log("🔄 Manual reconnect triggered");
+        // console.log("🔄 Manual reconnect triggered");
         disconnect();
         if (userId) {
           set({ reconnectAttempts: 0 });
@@ -176,12 +176,12 @@ export const useWebSocketStore = create<WebSocketState>()(
 
 // ==================== WebSocket Connection ====================
 function connectWithWebSocket(userId: string, url: string, set: any, get: any) {
-  console.log("🔌 Connecting with WebSocket...");
+  // console.log("🔌 Connecting with WebSocket...");
 
   const newWs = new WebSocket(`${url}?userId=${userId}`);
 
   newWs.onopen = () => {
-    console.log("✅ WebSocket connected");
+    // console.log("✅ WebSocket connected");
     set({ isConnected: true, userId });
     get().resetReconnectAttempts();
   };
@@ -189,7 +189,7 @@ function connectWithWebSocket(userId: string, url: string, set: any, get: any) {
   newWs.onmessage = (event: MessageEvent) => {
     try {
       const message = JSON.parse(event.data);
-      console.log("📨 WebSocket message:", message.type);
+      // console.log("📨 WebSocket message:", message.type);
 
       const handlers = get().eventHandlers.get(message.type);
       if (handlers) {
@@ -197,39 +197,39 @@ function connectWithWebSocket(userId: string, url: string, set: any, get: any) {
           try {
             handler(message.payload);
           } catch (error) {
-            console.error("Error in WebSocket handler:", error);
+            // console.error("Error in WebSocket handler:", error);
           }
         });
       }
     } catch (error) {
-      console.error("Error parsing WebSocket message:", error);
+      // console.error("Error parsing WebSocket message:", error);
     }
   };
 
   newWs.onerror = (error) => {
-    console.error("❌ WebSocket error:", error);
+    // console.error("❌ WebSocket error:", error);
   };
 
   newWs.onclose = (event) => {
-    console.log("❌ WebSocket closed:", event.code, event.reason);
+    // console.log("❌ WebSocket closed:", event.code, event.reason);
     set({ isConnected: false });
 
     // Attempt reconnection
     const { reconnectAttempts } = get();
     if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
       const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-      console.log(
+      /* console.log(
         `🔄 Reconnecting in ${delay}ms... (attempt ${
           reconnectAttempts + 1
         }/${MAX_RECONNECT_ATTEMPTS})`
-      );
+      ); */
 
       reconnectTimeout = setTimeout(() => {
         get().incrementReconnectAttempts();
         get().connect(userId);
       }, delay);
     } else {
-      console.error("❌ Max reconnection attempts reached");
+      // console.error("❌ Max reconnection attempts reached");
     }
   };
 
