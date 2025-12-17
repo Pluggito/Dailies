@@ -53,7 +53,7 @@ const getWebSocketUrl = () => {
   const isDev = process.env.NODE_ENV === "development";
 
   if (isDev) {
-    return process.env.NEXT_PUBLIC_WS_SERVER_URL || "ws://localhost:8080";
+    return process.env.NEXT_PUBLIC_WS_SERVER_URL || "ws://localhost:8085";
   }
 
   // Production - use environment variable
