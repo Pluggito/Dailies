@@ -30,7 +30,8 @@ export async function getProfileByUsername(username: string) {
     return user;
   } catch (error) {
     console.error("Error fetching profile:", error);
-    throw new Error("Failed to fetch profile");
+    // Return null instead of throwing to allow proper 404 handling
+    return null;
   }
 }
 
@@ -82,7 +83,8 @@ export async function getUserPosts(userId: string) {
     return posts;
   } catch (error) {
     console.error("Error fetching user posts:", error);
-    throw new Error("Failed to fetch user posts");
+    // Return empty array instead of throwing
+    return [];
   }
 }
 
@@ -140,7 +142,8 @@ export async function getUserLikedPosts(userId: string) {
     return likedPosts;
   } catch (error) {
     console.error("Error fetching user liked posts:", error);
-    throw new Error("Failed to fetch user liked posts");
+    // Return empty array instead of throwing
+    return [];
   }
 }
 
