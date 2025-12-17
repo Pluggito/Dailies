@@ -58,7 +58,7 @@ export async function getDbUserId() {
 
   const user = await getUserByClerkId(clerkId);
 
-  if (!user) throw new Error("User not found");
+  if (!user) return null; // User not synced to DB yet, return null instead of throwing
 
   return user.id;
 }
