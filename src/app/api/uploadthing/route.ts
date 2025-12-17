@@ -1,6 +1,7 @@
 import { createRouteHandler } from "uploadthing/next";
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { auth } from "@clerk/nextjs/server";
+import { getAccessTokenFromCookies } from "@/lib/auth/cookies";
+import { verifyAccessToken } from "@/lib/auth/tokens";
 
 const f = createUploadthing();
 
@@ -12,19 +13,21 @@ export const ourFileRouter = {
     },
   })
     .middleware(async () => {
-      const { userId } = await auth();
+      // Get access token from cookies
+      const accessToken = await getAccessTokenFromCookies();
 
-      if (!userId) {
-        throw new Error("Unauthorized - User not found");
+      if (!accessToken) {
+        throw new Error("Unauthorized - No token");
       }
 
-      return { userId };
+      const payload = await verifyAccessToken(accessToken);
+      if (!payload) {
+        throw new Error("Unauthorized - Invalid token");
+      }
+
+      return { userId: payload.userId };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      //  console.log("✅ Image upload complete!");
-      //  console.log("  User ID:", metadata.userId);
-      //  console.log("  File URL:", file.ufsUrl);
-
       return {
         uploadedBy: metadata.userId,
         url: file.ufsUrl,

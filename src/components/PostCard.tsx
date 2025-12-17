@@ -6,7 +6,7 @@ import {
   getPosts,
   toggleLike,
 } from "@/actions/post.action";
-import { SignInButton, useUser } from "@clerk/nextjs";
+import { useUser } from "./AuthProvider";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent } from "./ui/card";
@@ -14,7 +14,6 @@ import Link from "next/link";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import DeleteAlertDialog from "./DeleteAlertDialog ";
-import Image from "next/image";
 import { Button } from "./ui/button";
 import {
   HeartIcon,
@@ -34,7 +33,7 @@ const PostCard = ({
   post: Post;
   dbUserId: string | null;
 }) => {
-  const { user } = useUser();
+  const { user, isSignedIn } = useUser();
   const [newComment, setNewComment] = useState("");
   const [isCommenting, setIsCommenting] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
@@ -54,7 +53,7 @@ const PostCard = ({
       setNewLikes((prev) => prev + (hasLiked ? -1 : 1));
       await toggleLike(post.id);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       setNewLikes(post._count.likes);
       setHasLiked(post.likes.some((like) => like.userId === dbUserId));
     } finally {
@@ -73,8 +72,8 @@ const PostCard = ({
         setNewComment("");
       }
     } catch (error) {
-      console.log(error)
-      toast.error("Failed to ad comment");
+      console.log(error);
+      toast.error("Failed to add comment");
     } finally {
       setIsCommenting(false);
     }
@@ -90,7 +89,7 @@ const PostCard = ({
       else throw new Error(result.err);
     } catch (error) {
       toast.error("Failed to delete post");
-      console.log(error)
+      console.log(error);
     } finally {
       setIsDeleting(false);
     }
@@ -154,7 +153,7 @@ const PostCard = ({
 
           {/* LIKE & COMMENT BUTTONS */}
           <div className="flex items-center pt-2 space-x-4">
-            {user ? (
+            {isSignedIn ? (
               <Button
                 variant={"ghost"}
                 size={"sm"}
@@ -173,16 +172,17 @@ const PostCard = ({
                 <span>{newLikes}</span>
               </Button>
             ) : (
-              <SignInButton mode="modal">
-                <Button
-                  variant={"ghost"}
-                  size={"sm"}
-                  className="text-muted-foreground gap-2"
-                >
+              <Button
+                variant={"ghost"}
+                size={"sm"}
+                className="text-muted-foreground gap-2"
+                asChild
+              >
+                <Link href="/login">
                   <HeartIcon className="size-5" />
                   <span>{newLikes}</span>
-                </Button>
-              </SignInButton>
+                </Link>
+              </Button>
             )}
 
             <Button
@@ -221,7 +221,7 @@ const PostCard = ({
                         </span>
                         <span className="text-sm text-muted-foreground">•</span>
                         <span className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(comment.createAt))} ago
+                          {formatDistanceToNow(new Date(comment.createdAt))} ago
                         </span>
                       </div>
                       <p className="text-sm ml-2 break-words">
@@ -232,10 +232,10 @@ const PostCard = ({
                 ))}
               </div>
 
-              {user ? (
+              {isSignedIn && user ? (
                 <div className="flex space-x-3">
                   <Avatar className="size-8 flex-shrink-0">
-                    <AvatarImage src={user?.imageUrl || "/avatar.png"} />
+                    <AvatarImage src={user.image || "/avatar.png"} />
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <Textarea
@@ -265,12 +265,12 @@ const PostCard = ({
                 </div>
               ) : (
                 <div className="flex justify-center p-4 border rounded-lg bg-muted/50">
-                  <SignInButton mode="modal">
-                    <Button variant="outline" className="gap-2">
+                  <Button variant="outline" className="gap-2" asChild>
+                    <Link href="/login">
                       <LogInIcon className="size-4" />
                       Sign in to comment
-                    </Button>
-                  </SignInButton>
+                    </Link>
+                  </Button>
                 </div>
               )}
             </div>

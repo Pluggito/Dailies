@@ -1,9 +1,8 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { getSessionUserId } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { getDbUserId } from "./user.action";
 
 export async function getProfileByUsername(username: string) {
   try {
@@ -147,8 +146,8 @@ export async function getUserLikedPosts(userId: string) {
 
 export async function updateProfile(formData: FormData) {
   try {
-    const { userId: clerkId } = await auth();
-    if (!clerkId) throw new Error("Unauthorised");
+    const userId = await getSessionUserId();
+    if (!userId) throw new Error("Unauthorized");
 
     const name = formData.get("name") as string;
     const bio = formData.get("bio") as string;
@@ -156,7 +155,7 @@ export async function updateProfile(formData: FormData) {
     const website = formData.get("website") as string;
 
     const user = await prisma.user.update({
-      where: { clerkId },
+      where: { id: userId },
       data: {
         name,
         bio,
@@ -174,24 +173,22 @@ export async function updateProfile(formData: FormData) {
 }
 
 export async function isFollowing(userId: string) {
+  try {
+    const currentUserId = await getSessionUserId();
+    if (!currentUserId) return false;
 
+    const follow = await prisma.follows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: currentUserId,
+          followingId: userId,
+        },
+      },
+    });
 
-    try{
-        const currentUserId = await getDbUserId();
-        if(!currentUserId) return false;
-        const follow = await prisma.follows.findUnique({
-            where: {
-                followerId_followingId:{
-                    followerId: currentUserId,
-                    followingId: userId,
-                }
-            }
-        })
-
-        return !!follow
-    }catch(err){
-    console.error('Error checknig follow status:', err)
-    return false; 
-    }
-    
+    return !!follow;
+  } catch (err) {
+    console.error("Error checking follow status:", err);
+    return false;
+  }
 }

@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { SignInButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@/components/AuthProvider";
 import { format } from "date-fns";
 import {
   CalendarIcon,
@@ -36,6 +36,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type User = Awaited<ReturnType<typeof getProfileByUsername>>;
 type Posts = Awaited<ReturnType<typeof getUserPosts>>;
@@ -53,7 +54,7 @@ export default function ProfilePageClient({
   posts,
   user,
 }: ProfilePageClientProps) {
-  const { user: currentUser } = useUser();
+  const { user: currentUser, isSignedIn } = useUser();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
@@ -94,9 +95,7 @@ export default function ProfilePageClient({
     }
   };
 
-  const isOwnProfile =
-    currentUser?.username === user.username ||
-    currentUser?.emailAddresses[0].emailAddress.split("@")[0] === user.username;
+  const isOwnProfile = currentUser?.username === user.username;
 
   const formattedDate = format(new Date(user.createdAt), "MMMM yyyy");
 
@@ -147,10 +146,10 @@ export default function ProfilePageClient({
                 </div>
 
                 {/* "FOLLOW & EDIT PROFILE" BUTTONS */}
-                {!currentUser ? (
-                  <SignInButton mode="modal">
-                    <Button className="w-full mt-4">Follow</Button>
-                  </SignInButton>
+                {!isSignedIn ? (
+                  <Button className="w-full mt-4" asChild>
+                    <Link href="/login">Follow</Link>
+                  </Button>
                 ) : isOwnProfile ? (
                   <Button
                     className="w-full mt-4"

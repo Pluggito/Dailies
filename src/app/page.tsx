@@ -2,18 +2,18 @@ import { getPosts } from "@/actions/post.action";
 import { getDbUserId } from "@/actions/user.action";
 import CreatePost from "@/components/CreatePost";
 import WhoToFollow from "@/components/WhoToFollow";
-import AnimatedPosts from "@/components/AnimatedPosts"; // Import it
-import { currentUser } from "@clerk/nextjs/server";
+import AnimatedPosts from "@/components/AnimatedPosts";
+import { getSession } from "@/lib/auth";
 
 export default async function Home() {
-  const user = await currentUser();
+  const session = await getSession();
   const posts = await getPosts();
   const dbUserId = await getDbUserId();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 sm:ml-3">
       <div className="lg:col-span-6">
-        {user ? <CreatePost /> : null}
+        {session ? <CreatePost /> : null}
 
         {/* Here you use the animated client component */}
         <AnimatedPosts posts={posts} dbUserId={dbUserId} />

@@ -17,16 +17,17 @@ import {
   SheetTrigger,
 } from "./ui/sheet";
 import { useState, useEffect } from "react";
-import { SignInButton, SignOutButton, useUser, useAuth } from "@clerk/nextjs";
+import { useUser, useAuth } from "./AuthProvider";
 import ModeToggle from "./ModeToggle";
 import { useRouter, usePathname } from "next/navigation";
 import Loader from "./Loader";
+import Link from "next/link";
 
 const MobileNavbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { isSignedIn } = useAuth();
-  const { user } = useUser();
+  const { user, isSignedIn } = useUser();
+  const { logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -37,10 +38,7 @@ const MobileNavbar = () => {
 
   const getProfileLink = () => {
     if (!user) return "/profile";
-
-    const username = user.username;
-    const emailPrefix = user.emailAddresses?.[0]?.emailAddress.split("@")[0];
-    return `/profile/${username ?? emailPrefix ?? "user"}`;
+    return `/profile/${user.username}`;
   };
 
   // Handle navigation with loading state
@@ -48,6 +46,11 @@ const MobileNavbar = () => {
     setIsLoading(true);
     setShowMobileMenu(false);
     router.push(path);
+  };
+
+  const handleLogout = async () => {
+    setShowMobileMenu(false);
+    await logout();
   };
 
   return (
@@ -77,7 +80,7 @@ const MobileNavbar = () => {
                 Home
               </Button>
 
-              {isSignedIn ? (
+              {isSignedIn && user ? (
                 <>
                   <Button
                     variant={"ghost"}
@@ -106,27 +109,24 @@ const MobileNavbar = () => {
                     Profile
                   </Button>
 
-                  <SignOutButton>
-                    <Button
-                      variant={"ghost"}
-                      className="flex items-center gap-3 justify-start w-full"
-                      onClick={() => setShowMobileMenu(false)}
-                    >
-                      <LogOutIcon className="w-4 h-4" />
-                      Logout
-                    </Button>
-                  </SignOutButton>
+                  <Button
+                    variant={"ghost"}
+                    className="flex items-center gap-3 justify-start w-full text-red-600"
+                    onClick={handleLogout}
+                  >
+                    <LogOutIcon className="w-4 h-4" />
+                    Logout
+                  </Button>
                 </>
               ) : (
-                <SignInButton>
-                  <Button
-                    variant={"default"}
-                    className="w-full"
-                    onClick={() => setShowMobileMenu(false)}
-                  >
-                    Sign In
-                  </Button>
-                </SignInButton>
+                <Button
+                  variant={"default"}
+                  className="w-full"
+                  asChild
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <Link href="/login">Sign In</Link>
+                </Button>
               )}
             </nav>
           </SheetContent>

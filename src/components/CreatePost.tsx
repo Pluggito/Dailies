@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "./AuthProvider";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Avatar, AvatarImage } from "./ui/avatar";
@@ -73,7 +73,7 @@ const CreatePost = () => {
         toast.success("Post created successfully");
       }
     } catch (error) {
-      console.error("Failed to create post:", error);
+      //console.error("Failed to create post:", error);
       toast.error("Failed to create post");
     } finally {
       setIsPosting(false);
@@ -88,7 +88,7 @@ const CreatePost = () => {
         <div className="space">
           <div className="flex space-x-4">
             <Avatar className="w-10 h-10">
-              <AvatarImage src={user?.imageUrl || "/avatar.png"} />
+              <AvatarImage src={user?.image || "/avatar.png"} />
             </Avatar>
             <Textarea
               placeholder="what's on your mind?"

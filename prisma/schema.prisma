@@ -1,4 +1,4 @@
- // This is your Prisma schema file,
+// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
@@ -10,23 +10,26 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
+  provider = "postgresql"
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String   @unique
-  clerkId   String   @unique
-  name      String?
-  bio       String?
-  image     String?
-  location  String?
-  website   String?
-  createdAt DateTime @default(now()) // member since 2020
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  name         String?
+  bio          String?
+  image        String?
+  location     String?
+  website      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
+  // Auth relations
+  sessions Session[]
 
-  //Relations:
+  // Content relations
   posts    Post[]
   comments Comment[]
   likes    Like[]
@@ -34,11 +37,28 @@ model User {
   followers Follows[] @relation("following")
   following Follows[] @relation("follower")
 
-  notifications        Notification[] @relation("userNotifications") //notifications received by user
-  notificationsCreated Notification[] @relation("notificationCreator") //notifications triggered by a user
+  notifications        Notification[] @relation("userNotifications")
+  notificationsCreated Notification[] @relation("notificationCreator")
 
-  messages        Message[]
-  members         ChatMember[]
+  messages Message[]
+  members  ChatMember[]
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique // hashed with SHA-256
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([refreshToken])
 }
 
 model Post {
@@ -49,26 +69,24 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  //Relations
-  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade) //Cascade deletes means delete all post if author is deleted
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments      Comment[]
   likes         Like[]
   notifications Notification[]
 }
 
 model Comment {
-  id       String   @id @default(cuid())
-  content  String
-  authorId String
-  postId   String
+  id        String   @id @default(cuid())
+  content   String
+  authorId  String
+  postId    String
   createdAt DateTime @default(now())
 
-  //Relations
   author       User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   post         Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
   notification Notification[]
 
-  @@index([authorId, postId]) //composite index for faster queries
+  @@index([authorId, postId])
 }
 
 model Like {
@@ -77,12 +95,11 @@ model Like {
   userId    String
   createdAt DateTime @default(now())
 
-  //Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
-  @@index([userId, postId]) //composite index for faster queries
+  @@index([userId, postId])
 }
 
 model Follows {
@@ -90,7 +107,6 @@ model Follows {
   followingId String
   createdAt   DateTime @default(now())
 
-  //Relations
   follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
   following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
 
@@ -108,7 +124,6 @@ model Notification {
   commentId String?
   createdAt DateTime         @default(now())
 
-  //Relations
   user    User     @relation("userNotifications", fields: [userId], references: [id], onDelete: Cascade)
   creator User     @relation("notificationCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   post    Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -119,40 +134,39 @@ model Notification {
 
 model ChatRoom {
   id        String   @id @default(cuid())
-  type      String   @default("direct") // "direct" | "group"
-  name      String?  // optional for groups, null for direct chats
+  type      String   @default("direct")
+  name      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members   ChatMember[]
-  messages  Message[]
+  members  ChatMember[]
+  messages Message[]
 }
 
 model ChatMember {
-  id        String   @id @default(cuid())
-  userId    String
+  id         String    @id @default(cuid())
+  userId     String
   chatRoomId String
-  joinedAt  DateTime @default(now())
-  lastReadAt DateTime? // tracks last time member read messages in the chat
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime?
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, chatRoomId]) // prevent duplicate memberships
+  @@unique([userId, chatRoomId])
 }
 
-
 model Message {
-  id        String   @id @default(cuid())
+  id         String      @id @default(cuid())
   chatRoomId String
-  userId    String
- content    String? // for text content; can be null for audio/image messages
- type       MessageType @default(TEXT)
-mediaUrl    String? // URL to audio/image if applicable
-duration    Int? // optional audio duration in seconds
-readers     String[] @default([]) // userIds who have read this message (Postgres text[])
-  createdAt DateTime @default(now())
-  system     Boolean  @default(false)
+  userId     String
+  content    String?
+  type       MessageType @default(TEXT)
+  mediaUrl   String?
+  duration   Int?
+  readers    String[]    @default([])
+  createdAt  DateTime    @default(now())
+  system     Boolean     @default(false)
 
   chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
