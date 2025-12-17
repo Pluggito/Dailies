@@ -7,10 +7,10 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false,
   },
-  max: 10, // Reduced from 50 for serverless
-  min: 0, // Reduced from 10 for serverless
+  max: 50, // Reduced from 50 for serverless
+  min: 10, // Reduced from 10 for serverless
   idleTimeoutMillis: 20000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 20000,
   allowExitOnIdle: true,
 });
 
