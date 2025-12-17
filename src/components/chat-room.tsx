@@ -442,7 +442,7 @@ export function ChatRoom() {
   const activeConv = conversations.find((c) => c.id === activeConversation);
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] text-foreground bg-card rounded-lg overflow-hidden border border-border shadow-sm">
+    <div className="flex h-[calc(100vh-8rem)] text-foreground bg-card rounded-lg overflow-hidden border border-border shadow-sm">
       <ChatList
         conversations={conversations}
         activeConversation={activeConversation}
