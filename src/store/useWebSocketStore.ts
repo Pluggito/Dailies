@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { io, Socket } from "socket.io-client";
 
 interface Message {
   id: string;
@@ -24,11 +23,9 @@ interface Message {
 interface WebSocketState {
   // Connection state
   ws: WebSocket | null;
-  socketIO: Socket | null;
   isConnected: boolean;
   userId: string | null;
   reconnectAttempts: number;
-  connectionType: "websocket" | "socketio" | null;
 
   // Event handlers
   eventHandlers: Map<string, Set<(payload: any) => void>>;
@@ -44,7 +41,6 @@ interface WebSocketState {
   // Internal actions
   setConnected: (connected: boolean) => void;
   setWebSocket: (ws: WebSocket | null) => void;
-  setSocketIO: (socket: Socket | null) => void;
   incrementReconnectAttempts: () => void;
   resetReconnectAttempts: () => void;
 }
@@ -52,39 +48,29 @@ interface WebSocketState {
 const MAX_RECONNECT_ATTEMPTS = 5;
 let reconnectTimeout: NodeJS.Timeout | null = null;
 
-// Determine connection type based on environment
-// Determine connection config based on environment
-const getSocketConfig = () => {
+// Get WebSocket URL based on environment
+const getWebSocketUrl = () => {
   const isDev = process.env.NODE_ENV === "development";
 
   if (isDev) {
-    return {
-      type: "websocket" as const,
-      // Default to localhost:8080 for custom WS server in dev
-      url: process.env.NEXT_PUBLIC_WS_SERVER_URL || "ws://localhost:8080",
-    };
+    return process.env.NEXT_PUBLIC_WS_SERVER_URL || "ws://localhost:8080";
   }
 
-  return {
-    type: "socketio" as const,
-    // Use the production backend URL
-    url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || "",
-  };
+  // Production - use environment variable
+  return process.env.NEXT_PUBLIC_WS_SERVER_URL || "";
 };
 
 export const useWebSocketStore = create<WebSocketState>()(
   devtools(
     (set, get) => ({
       ws: null,
-      socketIO: null,
       isConnected: false,
       userId: null,
       reconnectAttempts: 0,
-      connectionType: null,
       eventHandlers: new Map(),
 
       connect: (userId: string) => {
-        const { ws, socketIO, isConnected } = get();
+        const { ws, isConnected } = get();
 
         // Don't reconnect if already connected
         if (isConnected) {
@@ -92,31 +78,26 @@ export const useWebSocketStore = create<WebSocketState>()(
           return;
         }
 
-        // Close existing connections
+        // Close existing connection
         if (ws) ws.close();
-        if (socketIO) socketIO.disconnect();
 
         try {
-          const config = getSocketConfig();
-          const wsUrl = config.url;
+          const wsUrl = getWebSocketUrl();
+
+          if (!wsUrl) {
+            console.error("❌ WebSocket URL not configured");
+            return;
+          }
 
           console.log("🔌 Connecting to:", wsUrl);
-          console.log("📡 Connection type:", config.type);
-
-          if (config.type === "socketio") {
-            // Use Socket.IO for production (Express backend)
-            connectWithSocketIO(userId, wsUrl, set, get);
-          } else {
-            // Use WebSocket for development (local WS server)
-            connectWithWebSocket(userId, wsUrl, set, get);
-          }
+          connectWithWebSocket(userId, wsUrl, set, get);
         } catch (error) {
           console.error("Error creating connection:", error);
         }
       },
 
       disconnect: () => {
-        const { ws, socketIO } = get();
+        const { ws } = get();
         if (reconnectTimeout) {
           clearTimeout(reconnectTimeout);
           reconnectTimeout = null;
@@ -125,36 +106,20 @@ export const useWebSocketStore = create<WebSocketState>()(
           ws.close();
           set({ ws: null });
         }
-        if (socketIO) {
-          socketIO.disconnect();
-          set({ socketIO: null });
-        }
-        set({ isConnected: false, userId: null, connectionType: null });
+        set({ isConnected: false, userId: null });
       },
 
       send: (type: string, payload: any) => {
-        const { ws, socketIO, isConnected, connectionType } = get();
+        const { ws, isConnected } = get();
 
-        if (!isConnected) {
+        if (!isConnected || ws?.readyState !== WebSocket.OPEN) {
           console.warn("⚠️ Not connected. Cannot send:", type);
           return;
         }
 
-        if (connectionType === "socketio" && socketIO?.connected) {
-          // Socket.IO uses emit
-          socketIO.emit(type, payload);
-          console.log("📤 Sent (Socket.IO):", type);
-        } else if (
-          connectionType === "websocket" &&
-          ws?.readyState === WebSocket.OPEN
-        ) {
-          // WebSocket uses send
-          const message = JSON.stringify({ type, payload });
-          ws.send(message);
-          console.log("📤 Sent (WebSocket):", type);
-        } else {
-          console.warn("⚠️ Connection not ready. Cannot send:", type);
-        }
+        const message = JSON.stringify({ type, payload });
+        ws.send(message);
+        console.log("📤 Sent:", type);
       },
 
       on: (type: string, handler: (payload: any) => void) => {
@@ -201,7 +166,6 @@ export const useWebSocketStore = create<WebSocketState>()(
 
       setConnected: (connected: boolean) => set({ isConnected: connected }),
       setWebSocket: (ws: WebSocket | null) => set({ ws }),
-      setSocketIO: (socket: Socket | null) => set({ socketIO: socket }),
       incrementReconnectAttempts: () =>
         set((state) => ({ reconnectAttempts: state.reconnectAttempts + 1 })),
       resetReconnectAttempts: () => set({ reconnectAttempts: 0 }),
@@ -209,57 +173,6 @@ export const useWebSocketStore = create<WebSocketState>()(
     { name: "WebSocket Store" }
   )
 );
-
-// ==================== Socket.IO Connection ====================
-function connectWithSocketIO(userId: string, url: string, set: any, get: any) {
-  console.log("🔌 Connecting with Socket.IO...");
-
-  // Convert ws:// or wss:// to http:// or https://
-  const httpUrl = url.replace(/^ws/, "http");
-
-  const socket = io(httpUrl, {
-    query: { userId },
-    transports: ["websocket"],
-    reconnection: true,
-    reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-    reconnectionDelay: 1000,
-    path: "/socket.io/",
-  });
-
-  socket.on("connect", () => {
-    console.log("✅ Socket.IO connected");
-    set({ isConnected: true, userId, connectionType: "socketio" });
-    get().resetReconnectAttempts();
-  });
-
-  socket.on("disconnect", (reason) => {
-    console.log("❌ Socket.IO disconnected:", reason);
-    set({ isConnected: false });
-  });
-
-  socket.on("connect_error", (error) => {
-    console.error("❌ Socket.IO connection error:", error);
-  });
-
-  // Register all event handlers
-  const handlers = get().eventHandlers;
-  handlers.forEach(
-    (handlerSet: Set<(payload: any) => void>, eventType: string) => {
-      socket.on(eventType, (payload: any) => {
-        console.log("📨 Socket.IO message:", eventType);
-        handlerSet.forEach((handler) => {
-          try {
-            handler(payload);
-          } catch (error) {
-            console.error("Error in Socket.IO handler:", error);
-          }
-        });
-      });
-    }
-  );
-
-  set({ socketIO: socket });
-}
 
 // ==================== WebSocket Connection ====================
 function connectWithWebSocket(userId: string, url: string, set: any, get: any) {
@@ -269,7 +182,7 @@ function connectWithWebSocket(userId: string, url: string, set: any, get: any) {
 
   newWs.onopen = () => {
     console.log("✅ WebSocket connected");
-    set({ isConnected: true, userId, connectionType: "websocket" });
+    set({ isConnected: true, userId });
     get().resetReconnectAttempts();
   };
 
@@ -330,7 +243,6 @@ export const useWebSocketConnection = () =>
     connect: state.connect,
     disconnect: state.disconnect,
     reconnect: state.reconnect,
-    connectionType: state.connectionType,
   }));
 
 export const useWebSocketSend = () => useWebSocketStore((state) => state.send);
