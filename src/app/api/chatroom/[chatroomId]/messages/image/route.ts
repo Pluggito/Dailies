@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { getSessionUserId } from "@/lib/auth";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ chatRoomId: string }> }
+  { params }: { params: Promise<{ chatroomId: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    const { chatRoomId } = await params;
+    const userId = await getSessionUserId();
+    const { chatroomId } = await params;
     const { imageUrl, caption } = await req.json();
 
     if (!userId) {
@@ -27,7 +27,7 @@ export async function POST(
       where: {
         userId_chatRoomId: {
           userId: userId,
-          chatRoomId: chatRoomId,
+          chatRoomId: chatroomId,
         },
       },
     });
@@ -42,7 +42,7 @@ export async function POST(
     // Create the image message
     const message = await prisma.message.create({
       data: {
-        chatRoomId: chatRoomId,
+        chatRoomId: chatroomId,
         userId: userId,
         content: caption || null,
         type: "IMAGE",
@@ -64,7 +64,7 @@ export async function POST(
 
     // Update chatroom timestamp
     await prisma.chatRoom.update({
-      where: { id: chatRoomId },
+      where: { id: chatroomId },
       data: { updatedAt: new Date() },
     });
 
@@ -85,11 +85,10 @@ export async function POST(
     console.log("✅ Image message sent:", {
       messageId: message.id,
       imageUrl,
-      chatRoomId,
+      chatroomId,
       hasCaption: !!caption,
     });
 
-    // Note: WebSocket broadcasting should be handled by your WebSocket server
     return NextResponse.json(transformedMessage, { status: 201 });
   } catch (error) {
     console.error("Error sending image message:", error);

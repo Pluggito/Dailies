@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Sidemenu from "@/components/Sidemenu";
@@ -10,6 +9,8 @@ import { Toaster } from "@/components/ui/sonner";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import { Pacifico } from "next/font/google";
 import { WebSocketInitializer } from "@/components/WebSocketInitializer";
+import { AuthProvider } from "@/components/AuthProvider";
+import MainLayout from "@/components/MainLayout";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -40,32 +41,23 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${spaceGrotesk.variable} ${pacifico.variable} ${poppins.variable} antialiased`}
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${spaceGrotesk.variable} ${pacifico.variable} ${poppins.variable} antialiased`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
+          <AuthProvider>
             <WebSocketInitializer />
-            <div className="min-h-screen">
-              <Navbar />
-              <main className="py-8">
-                <div className="max-w-7xl mx-auto px-4">
-                  <LayoutWrapper sidemenu={<Sidemenu />}>
-                    {children}
-                  </LayoutWrapper>
-                </div>
-              </main>
-            </div>
+            <MainLayout sidemenu={<Sidemenu />}>{children}</MainLayout>
             <Toaster />
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

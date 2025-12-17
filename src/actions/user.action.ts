@@ -1,68 +1,19 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { getSessionUserId } from "@/lib/auth";
 
-export async function syncUser() {
-  try {
-    const { userId } = await auth();
-    const user = await currentUser();
-
-    if (!userId || !user) return;
-    //check if user exists
-    const existingUser = await prisma.user.findUnique({
-      where: {
-        clerkId: userId,
-      },
-    });
-
-    if (existingUser) return existingUser;
-
-    const dbUser = await prisma.user.create({
-      data: {
-        clerkId: userId,
-        name: `${user.firstName || ""} ${user.lastName || ""}`,
-        username:
-          user.username ?? user.emailAddresses[0].emailAddress.split("@")[0],
-        email: user.emailAddresses[0].emailAddress,
-        image: user.imageUrl,
-      },
-    });
-
-    return dbUser;
-  } catch (error) {
-    console.log("Error in syncUser", error);
-  }
+/**
+ * Get the current user's database ID from session
+ * @returns User ID or null if not authenticated
+ */
+export async function getDbUserId(): Promise<string | null> {
+  return getSessionUserId();
 }
 
-export async function getUserByClerkId(clerkId: string) {
-  return prisma.user.findUnique({
-    where: {
-      clerkId,
-    },
-    include: {
-      _count: {
-        select: {
-          followers: true,
-          following: true,
-          posts: true,
-        },
-      },
-    },
-  });
-}
-
-export async function getDbUserId() {
-  const { userId: clerkId } = await auth();
-  if (!clerkId) return null;
-
-  const user = await getUserByClerkId(clerkId);
-
-  if (!user) return null; // User not synced to DB yet, return null instead of throwing
-
-  return user.id;
-}
-
+/**
+ * Get random users to suggest following (excludes current user and already followed)
+ */
 export async function getRandomUsers() {
   try {
     const userId = await getDbUserId();
@@ -104,13 +55,16 @@ export async function getRandomUsers() {
   }
 }
 
+/**
+ * Toggle follow/unfollow a user
+ */
 export async function toggleFollow(targetUserId: string) {
   try {
     const userId = await getDbUserId();
 
     if (!userId) return;
 
-    if (userId === targetUserId) throw new Error("You cant follow yourelf");
+    if (userId === targetUserId) throw new Error("You can't follow yourself");
 
     const existingFollow = await prisma.follows.findUnique({
       where: {
@@ -122,7 +76,7 @@ export async function toggleFollow(targetUserId: string) {
     });
 
     if (existingFollow) {
-      //follow
+      // Unfollow
       await prisma.follows.delete({
         where: {
           followerId_followingId: {
@@ -132,7 +86,7 @@ export async function toggleFollow(targetUserId: string) {
         },
       });
     } else {
-      // follow
+      // Follow
       await prisma.$transaction([
         prisma.follows.create({
           data: {
@@ -157,6 +111,9 @@ export async function toggleFollow(targetUserId: string) {
   }
 }
 
+/**
+ * Get user by username
+ */
 export async function getUserByUsername(username: string) {
   const userId = await getDbUserId();
   if (!userId) return;
@@ -165,6 +122,9 @@ export async function getUserByUsername(username: string) {
   });
 }
 
+/**
+ * Get followers of current user
+ */
 export async function getFollowers() {
   const userId = await getDbUserId();
   if (!userId) return [];
@@ -181,6 +141,9 @@ export async function getFollowers() {
   return followers.map((f) => f.follower);
 }
 
+/**
+ * Get chat messages for a room
+ */
 export async function getChatMessages(chatRoomId: string) {
   const userId = await getDbUserId();
   if (!userId) return [];
