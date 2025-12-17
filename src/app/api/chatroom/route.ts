@@ -1,6 +1,62 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+export async function GET(req: Request) {
+  try {
+    const userId = req.headers.get("x-user-id");
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const chatRooms = await prisma.chatRoom.findMany({
+      where: {
+        members: {
+          some: {
+            userId: userId,
+          },
+        },
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                image: true,
+              },
+            },
+          },
+        },
+        messages: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 1,
+        },
+        _count: {
+          select: {
+            messages: true,
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    return NextResponse.json(chatRooms);
+  } catch (error) {
+    console.error("Error fetching chat rooms:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch chat rooms" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   const body = await req.json();
   const { currentUserId, otherUserId } = body;

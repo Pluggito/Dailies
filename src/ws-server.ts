@@ -83,7 +83,7 @@ wss.on("connection", (ws: ExtendedWebSocket, req) => {
   // Connection timeout
   const connectionTimeout = setTimeout(() => {
     if (!ws.userId) {
-      //  console.log("⏰ Connection timeout - no userId provided");
+      // console.log("⏰ Connection timeout - no userId provided");
       ws.close(4000, "Connection timeout");
     }
   }, 10000);
@@ -104,8 +104,8 @@ wss.on("connection", (ws: ExtendedWebSocket, req) => {
     userConnections.get(userId)?.add(ws);
 
     // console.log(
-    //    `👤 User ${userId} connected (Total: ${userConnections.size} users)`
-    //  );
+    //   `👤 User ${userId} connected (Total: ${userConnections.size} users)`
+    // );
   }
 
   ws.on("message", async (data: Buffer) => {
@@ -190,13 +190,13 @@ wss.on("connection", (ws: ExtendedWebSocket, req) => {
       });
 
       // console.log(
-      //    `👋 User ${ws.userId} disconnected (Remaining: ${userConnections.size} users)`
+      //   `👋 User ${ws.userId} disconnected (Remaining: ${userConnections.size} users)`
       // );
     }
   });
 
   ws.on("error", (error) => {
-    console.error("WebSocket error:", error);
+    // console.error("WebSocket error:", error);
   });
 });
 
@@ -248,7 +248,7 @@ function handleLeaveRoom(ws: ExtendedWebSocket, payload: any) {
   }
 
   ws.chatRooms?.delete(chatRoomId);
-  //   console.log(`📤 User ${userId} left room ${chatRoomId}`);
+  // console.log(`📤 User ${userId} left room ${chatRoomId}`);
 }
 
 // ==================== SEND MESSAGE ====================
@@ -300,6 +300,7 @@ async function handleSendMessage(ws: ExtendedWebSocket, payload: any) {
       {
         headers: {
           "Content-Type": "application/json",
+          "x-api-secret": process.env.API_SECRET || "development-secret-key",
         },
       }
     );
@@ -458,6 +459,7 @@ async function handleMessagesRead(ws: ExtendedWebSocket, payload: any) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-api-secret": process.env.API_SECRET || "development-secret-key",
         },
         body: JSON.stringify({
           userId,
@@ -548,5 +550,4 @@ function gracefulShutdown() {
 setInterval(() => {
   // console.log(
   //   `📊 Stats: ${userConnections.size} users, ${roomConnections.size} active rooms`
-  // );
-}, 60000); // Log every minute
+});

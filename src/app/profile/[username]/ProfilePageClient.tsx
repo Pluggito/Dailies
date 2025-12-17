@@ -174,7 +174,7 @@ export default function ProfilePageClient({
                         className={`${isFollowing ? "w-[20%]" : ""}`}
                         disabled={isUpdatingFollow}
                         variant={isFollowing ? "outline" : "ghost"}
-                        onClick={() => router.push("/chat")}
+                        onClick={() => router.push(`/chat?userId=${user.id}`)}
                         style={{
                           visibility: isFollowing ? "visible" : "hidden",
                         }}

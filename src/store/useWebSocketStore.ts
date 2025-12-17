@@ -53,11 +53,23 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 let reconnectTimeout: NodeJS.Timeout | null = null;
 
 // Determine connection type based on environment
-const useSocketIO = () => {
-  // Use Socket.IO in production (when connecting to Express backend)
-  // Use WebSocket in development (local WS server)
-  const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8080";
-  return !wsUrl.includes("localhost") && !wsUrl.includes("8080");
+// Determine connection config based on environment
+const getSocketConfig = () => {
+  const isDev = process.env.NODE_ENV === "development";
+
+  if (isDev) {
+    return {
+      type: "websocket" as const,
+      // Default to localhost:8080 for custom WS server in dev
+      url: process.env.NEXT_PUBLIC_WS_SERVER_URL || "ws://localhost:8080",
+    };
+  }
+
+  return {
+    type: "socketio" as const,
+    // Use the production backend URL
+    url: process.env.NEXT_PUBLIC_WEBSOCKET_URL || "",
+  };
 };
 
 export const useWebSocketStore = create<WebSocketState>()(
@@ -85,17 +97,13 @@ export const useWebSocketStore = create<WebSocketState>()(
         if (socketIO) socketIO.disconnect();
 
         try {
-          const wsUrl =
-            process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8080";
-          const shouldUseSocketIO = useSocketIO();
+          const config = getSocketConfig();
+          const wsUrl = config.url;
 
           console.log("🔌 Connecting to:", wsUrl);
-          console.log(
-            "📡 Connection type:",
-            shouldUseSocketIO ? "Socket.IO" : "WebSocket"
-          );
+          console.log("📡 Connection type:", config.type);
 
-          if (shouldUseSocketIO) {
+          if (config.type === "socketio") {
             // Use Socket.IO for production (Express backend)
             connectWithSocketIO(userId, wsUrl, set, get);
           } else {

@@ -38,6 +38,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Check for internal service secret
+  const apiSecret = request.headers.get("x-api-secret");
+  const serverSecret = process.env.API_SECRET || "development-secret-key";
+
+  if (apiSecret && apiSecret === serverSecret) {
+    return NextResponse.next();
+  }
+
   // Check for access token
   const accessToken = request.cookies.get("access_token")?.value;
 

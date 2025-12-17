@@ -11,6 +11,7 @@ import {
 } from "@/actions/user.action";
 import axios from "axios";
 import { useWebSocketStore } from "@/store/useWebSocketStore";
+import { useSearchParams } from "next/navigation";
 
 interface Message {
   id: string;
@@ -34,6 +35,7 @@ interface Conversation {
   unread: number;
   online: boolean;
   image?: string;
+  otherUserId: string;
 }
 
 export function ChatRoom() {
@@ -55,6 +57,9 @@ export function ChatRoom() {
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const searchParams = useSearchParams();
+  const urlUserId = searchParams.get("userId");
+  const urlUserIdProcessedRef = useRef(false);
 
   // WebSocket connection
   const { send, on, off, isConnected } = useWebSocketStore();
@@ -87,18 +92,97 @@ export function ChatRoom() {
         const userId = await getDbUserId();
         setCurrentUserId(userId);
 
-        const followers = await getFollowers();
-        const mappedConversations: Conversation[] = followers.map((f) => ({
-          id: f.id,
-          name: f.name || f.username,
-          username: f.username,
-          lastMessage: "Tap to chat",
-          timestamp: new Date(),
-          unread: 0,
-          online: false,
-          image: f.image || "",
-        }));
+        if (!userId) return;
+
+        const res = await axios.get("/api/chatroom");
+        const rooms = res.data;
+
+        const mappedConversations: Conversation[] = rooms.map((room: any) => {
+          // Identify the other participant
+          const otherMember = room.members.find(
+            (m: any) => m.userId !== userId
+          );
+          const otherUser = otherMember?.user || {
+            name: "Unknown",
+            username: "unknown",
+            image: "",
+          };
+
+          return {
+            id: room.id, // Use ChatRoom ID
+            name: otherUser.name || otherUser.username,
+            username: otherUser.username,
+            lastMessage:
+              room.messages[0]?.content ||
+              (room.messages[0]?.mediaUrl
+                ? "Sent an attachment"
+                : "No messages"),
+            timestamp: new Date(room.updatedAt),
+            unread: 0, // TODO: Implement unread count logic if needed
+            online: false,
+            image: otherUser.image || "",
+            otherUserId: otherUser.id,
+          };
+        });
         setConversations(mappedConversations);
+
+        // Handle URL userId param
+        if (urlUserId && !urlUserIdProcessedRef.current) {
+          urlUserIdProcessedRef.current = true;
+          const existingConv = mappedConversations.find(
+            (c) => c.otherUserId === urlUserId
+          );
+
+          if (existingConv) {
+            handleSelectConversation(existingConv.id);
+          } else {
+            // Create new room
+            try {
+              const res = await axios.post("/api/chatroom", {
+                currentUserId: userId,
+                otherUserId: urlUserId,
+              });
+              const newRoom = res.data;
+
+              // Check if it's already in the list (race condition?)
+              const alreadyExists = mappedConversations.find(
+                (c) => c.id === newRoom.id
+              );
+
+              if (!alreadyExists) {
+                // Find other user details - we might need to fetch them if not in room response?
+                // The POST response includes members.
+                const otherMember = newRoom.members.find(
+                  (m: any) => m.userId !== userId
+                );
+                const otherUser = otherMember?.user || {
+                  name: "User",
+                  username: "user",
+                  image: "",
+                };
+
+                const newConv: Conversation = {
+                  id: newRoom.id,
+                  name: otherUser.name || otherUser.username,
+                  username: otherUser.username,
+                  lastMessage: "New chat",
+                  timestamp: new Date(),
+                  unread: 0,
+                  online: false,
+                  image: otherUser.image || "",
+                  otherUserId: otherUser.id,
+                };
+
+                setConversations((prev) => [newConv, ...prev]);
+                handleSelectConversation(newRoom.id);
+              } else {
+                handleSelectConversation(newRoom.id);
+              }
+            } catch (err) {
+              console.error("Failed to create chat from URL", err);
+            }
+          }
+        }
       } catch (error) {
         console.error("Failed to load initial data", error);
       }
@@ -160,34 +244,34 @@ export function ChatRoom() {
   );
 
   const handleChatListUpdate = useCallback((payload: any) => {
-    const { message: msgPayload } = payload;
+    const { message: msgPayload, chatRoomId } = payload; // Assuming payload has chatRoomId
 
     setConversations((prev) => {
-      return prev.map((conv) => {
-        let matches = false;
+      // Check if conversation exists
+      const existingConv = prev.find((c) => c.id === chatRoomId);
 
-        if (msgPayload.senderId === currentUserIdRef.current) {
-          // We sent it - match by active conversation
-          if (activeConversationRef.current === conv.id) matches = true;
-        } else {
-          // They sent it - match by sender ID
-          if (conv.id === msgPayload.senderId) matches = true;
-        }
-
-        if (matches) {
-          return {
-            ...conv,
-            lastMessage:
-              msgPayload.content ||
-              (msgPayload.mediaUrl ? "Sent an attachment" : ""),
-            timestamp: new Date(msgPayload.createdAt),
-            // Only increment unread if not currently viewing this conversation
-            unread:
-              activeConversationRef.current === conv.id ? 0 : conv.unread + 1,
-          };
-        }
-        return conv;
-      });
+      if (existingConv) {
+        return prev.map((conv) => {
+          if (conv.id === chatRoomId) {
+            return {
+              ...conv,
+              lastMessage:
+                msgPayload.content ||
+                (msgPayload.mediaUrl ? "Sent an attachment" : ""),
+              timestamp: new Date(msgPayload.createdAt),
+              unread:
+                activeConversationRef.current === conv.id ? 0 : conv.unread + 1,
+            };
+          }
+          return conv;
+        });
+      } else {
+        // New conversation? We might need to fetch it or add it.
+        // For simplicity, we can trigger a re-fetch of the list or ignore if handled elsewhere.
+        // A better approach is to optimistically add it if we have details, but we probably need to fetch the room details.
+        // For now, let's just ignore or maybe reload.
+        return prev;
+      }
     });
   }, []);
 
@@ -304,9 +388,10 @@ export function ChatRoom() {
     }
   }, [messages, activeChatRoomId, currentUserId, isConnected, send]);
 
-  const handleSelectConversation = async (partnerId: string) => {
-    setActiveConversation(partnerId);
+  const handleSelectConversation = async (conversationId: string) => {
+    setActiveConversation(conversationId);
     setShowMobileChat(true);
+    setActiveChatRoomId(conversationId); // In this new model, ID is the ChatRoom ID
 
     if (!currentUserId) return;
 
@@ -314,23 +399,10 @@ export function ChatRoom() {
       // Clear previous messages immediately
       setMessages([]);
       setTypingUsers(new Set());
-
-      // Clear processed message IDs for new conversation
       processedMessageIdsRef.current.clear();
 
-      // Create or get chat room
-      const res = await axios.post("/api/chatroom", {
-        currentUserId,
-        otherUserId: partnerId,
-      });
-
-      const chatRoom = res.data;
-
-      // Set the active room (this will trigger room join via useEffect)
-      setActiveChatRoomId(chatRoom.id);
-
-      // Fetch messages
-      const dbMessages = await getChatMessages(chatRoom.id);
+      // Fetch messages using the API or action
+      const dbMessages = await getChatMessages(conversationId);
 
       // Filter out system messages and map to Message format
       const refinedMessages: Message[] = dbMessages
@@ -358,11 +430,11 @@ export function ChatRoom() {
       // Reset unread count for this conversation
       setConversations((prev) =>
         prev.map((conv) =>
-          conv.id === partnerId ? { ...conv, unread: 0 } : conv
+          conv.id === conversationId ? { ...conv, unread: 0 } : conv
         )
       );
     } catch (error) {
-      // console.error("Error entering chat:", error);
+      console.error("Error entering chat:", error);
     }
   };
 
