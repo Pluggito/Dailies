@@ -8,6 +8,7 @@ import { Separator } from "./ui/separator";
 import { LinkIcon, MapPinIcon } from "lucide-react";
 import { useUser } from "./AuthProvider";
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 interface UserData {
   id: string;
@@ -39,11 +40,8 @@ const Sidemenu = () => {
       }
 
       try {
-        const response = await fetch(`/api/user/${user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserData(data.user);
-        }
+        const response = await axios.get(`/api/user/${user.id}`);
+        setUserData(response.data.user);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
       } finally {
