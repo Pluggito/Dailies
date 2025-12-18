@@ -55,7 +55,11 @@ const MobileNavbar = () => {
 
   return (
     <>
-      {isLoading && <Loader />}
+      {isLoading && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Loader />
+        </div>
+      )}
 
       <div className="flex md:hidden items-center space-x-2">
         <ModeToggle />
@@ -70,7 +74,7 @@ const MobileNavbar = () => {
             <SheetHeader>
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
-            <nav className="flex flex-col space-y-4 ">
+            <nav className="flex flex-col space-y-4">
               <Button
                 variant={"ghost"}
                 className="flex items-center gap-3 justify-start"

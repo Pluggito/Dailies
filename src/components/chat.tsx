@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import EmojiPicker from "emoji-picker-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatProps {
   showMobileChat: boolean;
@@ -25,6 +27,8 @@ interface ChatProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   typingUsers: Set<string>;
   currentUserId: string | null;
+  open: boolean;
+  setOpen: (open: boolean) => void;
 }
 
 export default function Chat({
@@ -40,8 +44,15 @@ export default function Chat({
   messagesEndRef,
   typingUsers,
   currentUserId,
+  open,
+  setOpen,
 }: ChatProps) {
   const isPartnerTyping = typingUsers.size > 0;
+
+  const handleEmoji = (e: any) => {
+    setMessage((prev: any) => prev + e.emoji);
+    setOpen(false);
+  };
 
   return (
     <>
@@ -60,7 +71,7 @@ export default function Chat({
             <AvatarFallback className="bg-gradient-to-br from-purple-400 to-violet-600 text-white font-medium">
               {activeConv?.name
                 .split(" ")
-                .map((n) => n[0])
+                .map((n: any[]) => n[0])
                 .join("")}
             </AvatarFallback>
           </Avatar>
@@ -125,7 +136,7 @@ export default function Chat({
                     >
                       {msg.sender.name
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: any[]) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
@@ -181,7 +192,7 @@ export default function Chat({
                 <AvatarFallback className="bg-gradient-to-br from-pink-400 to-rose-600 text-white text-xs font-medium">
                   {activeConv?.name
                     .split(" ")
-                    .map((n) => n[0])
+                    .map((n: any[]) => n[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
@@ -228,14 +239,40 @@ export default function Chat({
                   placeholder="Type a message..."
                   className="flex-1 bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-muted-foreground p-0 h-auto py-2  "
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 text-muted-foreground hover:text-foreground shrink-0 mb-1 "
-                >
-                  <Smile className="size-4" />
-                </Button>
+                <div className="relative">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setOpen(!open)}
+                  >
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 text-muted-foreground hover:text-foreground shrink-0 mb-1 "
+                    >
+                      <Smile className="size-4" />
+                    </Button>
+                  </motion.button>
+                  <AnimatePresence>
+                    {open && (
+                      <motion.div
+                        className="absolute bottom-12 -right-14 sm:right-0 z-50 max-w-[90vw] sm:max-w-xs"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <EmojiPicker
+                          onEmojiClick={handleEmoji}
+                          width={375}
+                          height={375}
+                          className="ml-7 bg-black lg:ml-0"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
             <Button

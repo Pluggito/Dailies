@@ -1,31 +1,46 @@
-'use client';
-// Loader.tsx
-
-import React from 'react';
-import styled from 'styled-components';
+"use client";
+import styled from "styled-components";
 
 const Loader = () => {
   return (
     <StyledWrapper>
-      <div className="spinner">
-        <div />   
-        <div />    
-        <div />    
-        <div />    
-        <div />    
-        <div />    
-        <div />    
-        <div />    
-        <div />    
-        <div />    
+      <div className="loader-backdrop">
+        <div className="spinner">
+          <div />
+          <div />
+          <div />
+          <div />
+          <div />
+          <div />
+          <div />
+          <div />
+          <div />
+          <div />
+        </div>
       </div>
     </StyledWrapper>
   );
-}
+};
 
 const StyledWrapper = styled.div`
+  /* Added fixed fullscreen backdrop styling */
+  .loader-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: hsl(var(--background));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
   .spinner {
-    position: absolute;
+    position: relative;
     width: 9px;
     height: 9px;
   }
@@ -34,8 +49,9 @@ const StyledWrapper = styled.div`
     position: absolute;
     width: 50%;
     height: 150%;
-    background: #000000;
-    transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1%));
+    background: hsl(var(--foreground));
+    transform: rotate(calc(var(--rotation) * 1deg))
+      translate(0, calc(var(--translation) * 1%));
     animation: spinner-fzua35 1s calc(var(--delay) * 1s) infinite ease;
   }
 
@@ -100,13 +116,25 @@ const StyledWrapper = styled.div`
   }
 
   @keyframes spinner-fzua35 {
-    0%, 10%, 20%, 30%, 50%, 60%, 70%, 80%, 90%, 100% {
-      transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1%));
+    0%,
+    10%,
+    20%,
+    30%,
+    50%,
+    60%,
+    70%,
+    80%,
+    90%,
+    100% {
+      transform: rotate(calc(var(--rotation) * 1deg))
+        translate(0, calc(var(--translation) * 1%));
     }
 
     50% {
-      transform: rotate(calc(var(--rotation) * 1deg)) translate(0, calc(var(--translation) * 1.5%));
+      transform: rotate(calc(var(--rotation) * 1deg))
+        translate(0, calc(var(--translation) * 1.5%));
     }
-  }`;
+  }
+`;
 
 export default Loader;

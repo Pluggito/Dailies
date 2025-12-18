@@ -178,7 +178,9 @@ export const useWebSocketStore = create<WebSocketState>()(
 function connectWithWebSocket(userId: string, url: string, set: any, get: any) {
   // console.log("🔌 Connecting with WebSocket...");
 
-  const newWs = new WebSocket(`${url}?userId=${userId}`);
+  const wssUrl = `${url}?userId=${userId}`;
+
+  const newWs = new WebSocket(wssUrl);
 
   newWs.onopen = () => {
     // console.log("✅ WebSocket connected");
