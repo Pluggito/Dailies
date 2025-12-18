@@ -195,3 +195,94 @@ export async function isFollowing(userId: string) {
     return false;
   }
 }
+
+export async function getUserFollowers(userId: string) {
+  try {
+    const currentUserId = await getSessionUserId();
+    if (!currentUserId) return [];
+
+    const followers = await prisma.follows.findMany({
+      where: {
+        followerId: userId,
+      },
+      include: {
+        follower: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true,
+            _count: {
+              select: {
+                followers: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const followersWithStatus = await Promise.all(
+      followers.map(async (f) => ({
+        ...f.follower,
+        isFollowedByCurrentUser: currentUserId
+          ? await isFollowing(f.follower.id)
+          : false,
+      }))
+    );
+
+    return followersWithStatus;
+  } catch (err) {
+    console.error("Error fetching followers:", err);
+    return [];
+  }
+}
+
+export async function getUserFollowing(userId: string) {
+  try {
+    const currentUserId = await getSessionUserId();
+
+    const following = await prisma.follows.findMany({
+      where: {
+        followerId: userId,
+      },
+      include: {
+        following: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            image: true,
+            bio: true,
+            _count: {
+              select: {
+                followers: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Check if current user follows each person
+    const followingWithStatus = await Promise.all(
+      following.map(async (f) => ({
+        ...f.following,
+        isFollowedByCurrentUser: currentUserId
+          ? await isFollowing(f.following.id)
+          : false,
+      }))
+    );
+
+    return followingWithStatus;
+  } catch (error) {
+    console.error("Error fetching following:", error);
+    return [];
+  }
+}

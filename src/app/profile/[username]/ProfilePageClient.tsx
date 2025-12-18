@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useUser } from "@/components/AuthProvider";
+import FollowersDialog from "@/components/FollowersDialog";
 import { format } from "date-fns";
 import {
   CalendarIcon,
@@ -56,6 +57,10 @@ export default function ProfilePageClient({
 }: ProfilePageClientProps) {
   const { user: currentUser, isSignedIn } = useUser();
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showFollowersDialog, setShowFollowersDialog] = useState(false);
+  const [followersDialogTab, setFollowersDialogTab] = useState<
+    "followers" | "following"
+  >("followers");
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
 
@@ -68,7 +73,6 @@ export default function ProfilePageClient({
 
   const router = useRouter();
 
-  // Filter out posts with missing data to prevent rendering errors
   const validPosts = posts.filter(
     (post) => post && post.author && post.author.username && post.id
   );
@@ -103,6 +107,7 @@ export default function ProfilePageClient({
       toast.success(
         isFollowing ? "Unfollowed successfully" : "Followed successfully"
       );
+      router.refresh();
     } catch (error) {
       console.error("Follow error:", error);
       toast.error("Failed to update follow status");
@@ -111,8 +116,12 @@ export default function ProfilePageClient({
     }
   };
 
-  const isOwnProfile = currentUser?.username === user.username;
+  const handleOpenFollowers = (tab: "followers" | "following") => {
+    setFollowersDialogTab(tab);
+    setShowFollowersDialog(true);
+  };
 
+  const isOwnProfile = currentUser?.username === user.username;
   const formattedDate = format(new Date(user.createdAt), "MMMM yyyy");
 
   return (
@@ -131,26 +140,32 @@ export default function ProfilePageClient({
                 <p className="text-muted-foreground">@{user.username}</p>
                 {user.bio && <p className="mt-2 text-sm">{user.bio}</p>}
 
-                {/* PROFILE STATS */}
+                {/* PROFILE STATS - Now clickable */}
                 <div className="w-full mt-6">
                   <div className="flex justify-between mb-4">
-                    <div>
+                    <button
+                      onClick={() => handleOpenFollowers("following")}
+                      className="hover:opacity-70 cursor-pointer transition-opacity"
+                    >
                       <div className="font-semibold">
                         {user._count.following.toLocaleString()}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm cursor-pointer text-muted-foreground">
                         Following
                       </div>
-                    </div>
+                    </button>
                     <Separator orientation="vertical" />
-                    <div>
+                    <button
+                      onClick={() => handleOpenFollowers("followers")}
+                      className="hover:opacity-70 cursor-pointer transition-opacity"
+                    >
                       <div className="font-semibold">
                         {user._count.followers.toLocaleString()}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         Followers
                       </div>
-                    </div>
+                    </button>
                     <Separator orientation="vertical" />
                     <div>
                       <div className="font-semibold">
@@ -161,7 +176,7 @@ export default function ProfilePageClient({
                   </div>
                 </div>
 
-                {/* "FOLLOW & EDIT PROFILE" BUTTONS */}
+                {/* FOLLOW & EDIT PROFILE BUTTONS */}
                 {!isSignedIn ? (
                   <Button className="w-full mt-4" asChild>
                     <Link href="/login">Follow</Link>
@@ -284,6 +299,7 @@ export default function ProfilePageClient({
           </TabsContent>
         </Tabs>
 
+        {/* Edit Profile Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
@@ -344,6 +360,15 @@ export default function ProfilePageClient({
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Followers/Following Dialog */}
+        <FollowersDialog
+          open={showFollowersDialog}
+          onOpenChange={setShowFollowersDialog}
+          userId={user.id}
+          username={user.username}
+          initialTab={followersDialogTab}
+        />
       </div>
     </div>
   );

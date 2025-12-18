@@ -49,6 +49,7 @@ export function ChatRoom() {
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [open, setOpen] = useState(false);
 
   // Use refs to avoid stale closures
   const currentUserIdRef = useRef<string | null>(null);
@@ -543,6 +544,8 @@ export function ChatRoom() {
           messagesEndRef={messagesEndRef}
           typingUsers={typingUsers}
           currentUserId={currentUserId}
+          open={open}
+          setOpen={setOpen}
         />
       </div>
     </div>
