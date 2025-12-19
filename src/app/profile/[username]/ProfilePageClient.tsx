@@ -132,7 +132,10 @@ export default function ProfilePageClient({
             <CardContent className="pt-6 bg-transparent rounded-none">
               <div className="flex flex-col items-center text-center">
                 <Avatar className="w-24 h-24">
-                  <AvatarImage src={user.image ?? "/avatar.png"} />
+                  <AvatarImage
+                    src={user.image ?? "/avatar.png"}
+                    alt={`${user.name ?? user.username}'s avatar`}
+                  />
                 </Avatar>
                 <h1 className="mt-4 text-2xl font-bold">
                   {user.name ?? user.username}

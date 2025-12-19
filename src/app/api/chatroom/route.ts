@@ -47,7 +47,27 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json(chatRooms);
+    const chatRoomsWithUnread = await Promise.all(
+      chatRooms.map(async (room) => {
+        const unreadCount = await prisma.message.count({
+          where: {
+            chatRoomId: room.id,
+            userId: { not: userId }, // Not sent by current user
+            NOT: {
+              readers: {
+                has: userId,
+              },
+            },
+          },
+        });
+        return {
+          ...room,
+          unreadCount,
+        };
+      })
+    );
+
+    return NextResponse.json(chatRoomsWithUnread);
   } catch (error) {
     console.error("Error fetching chat rooms:", error);
     return NextResponse.json(

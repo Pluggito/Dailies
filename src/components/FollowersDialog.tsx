@@ -61,14 +61,14 @@ export default function FollowersDialog({
   const loadFollowers = async () => {
     setLoadingFollowers(true);
     const data = await getUserFollowers(userId);
-    setFollowers(data);
+    setFollowers(data as any[]);
     setLoadingFollowers(false);
   };
 
   const loadFollowing = async () => {
     setLoadingFollowing(true);
     const data = await getUserFollowing(userId);
-    setFollowing(data);
+    setFollowing(data as any[]);
     setLoadingFollowing(false);
   };
 
@@ -123,12 +123,15 @@ export default function FollowersDialog({
     return (
       <div className="flex items-center justify-between py-3">
         <Link
-          href={`/${user.username}`}
+          href={`/profile/${user.username}`}
           className="flex items-center gap-3 flex-1 hover:opacity-80"
           onClick={() => onOpenChange(false)}
         >
           <Avatar className="w-12 h-12">
-            <AvatarImage src={user.image ?? "/avatar.png"} />
+            <AvatarImage
+              src={user.image ?? "/avatar.png"}
+              alt={`${user.name || user.username}'s avatar`}
+            />
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="font-semibold truncate">

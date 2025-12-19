@@ -83,7 +83,10 @@ const Notifications = () => {
                   <Avatar className="mt-1">
                     <AvatarImage
                       src={notification.creator.image ?? "/avatar.png"}
-                      alt="User avatar"
+                      alt={`${
+                        notification.creator.name ??
+                        notification.creator.username
+                      }'s avatar`}
                     />
                   </Avatar>
 
@@ -113,6 +116,8 @@ const Notifications = () => {
                               <Image
                                 src={notification.post.image}
                                 alt="Post content"
+                                width={200}
+                                height={200}
                                 className="mt-2 rounded-md w-full max-w-[200px] h-auto object-cover"
                               />
                             )}

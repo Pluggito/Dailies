@@ -120,6 +120,7 @@
   }
   body {
     @apply bg-background text-foreground font-grotesk;
+    scrollbar-gutter: stable;
   }
 
   ::-webkit-scrollbar {

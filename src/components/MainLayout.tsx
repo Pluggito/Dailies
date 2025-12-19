@@ -17,11 +17,27 @@ export default function MainLayout({ children, sidemenu }: MainLayoutProps) {
     return <>{children}</>;
   }
 
+  const isChatPage = pathname.startsWith("/chat");
+
   return (
-    <div className="min-h-screen">
+    <div
+      className={
+        isChatPage
+          ? "h-screen flex flex-col overflow-hidden"
+          : "min-h-screen flex flex-col"
+      }
+    >
       <Navbar />
-      <main className="py-8">
-        <div className="max-w-7xl mx-auto px-4">
+      <main
+        className={isChatPage ? "flex-1 flex flex-col overflow-hidden" : "py-8"}
+      >
+        <div
+          className={
+            isChatPage
+              ? "w-full flex-1 flex flex-col overflow-hidden"
+              : "max-w-7xl mx-auto px-4"
+          }
+        >
           <LayoutWrapper sidemenu={sidemenu}>{children}</LayoutWrapper>
         </div>
       </main>

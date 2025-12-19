@@ -68,7 +68,7 @@ function ImageUploads({ onFileSelect, previewUrl }: ImageUploadsProps) {
       <div className="relative w-full max-w-xs">
         <img
           src={previewUrl}
-          alt="Preview"
+          alt="Preview of uploaded image"
           className="rounded-lg w-full h-48 object-cover border border-border"
         />
         <Button
@@ -77,6 +77,7 @@ function ImageUploads({ onFileSelect, previewUrl }: ImageUploadsProps) {
           size="icon"
           variant="destructive"
           className="absolute top-2 right-2 h-8 w-8 rounded-full shadow-lg"
+          aria-label="Remove image"
         >
           <XIcon className="h-4 w-4" />
         </Button>

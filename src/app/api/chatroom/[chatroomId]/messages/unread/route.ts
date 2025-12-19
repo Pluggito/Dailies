@@ -12,8 +12,9 @@ export async function GET(
   try {
     const { chatroomId } = await context.params;
     const chatRoomId = chatroomId;
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
+
+    // Auth check using x-user-id header set by middleware
+    const userId = req.headers.get("x-user-id");
 
     console.log("🔍 GET /messages/unread - Request:", {
       chatRoomId,
@@ -21,31 +22,17 @@ export async function GET(
     });
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    // Get actual database user ID from Clerk ID
-    const dbUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!dbUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const actualUserId = dbUser.id;
 
     // Count unread messages (messages not sent by user and not in readers array)
     const unreadCount = await prisma.message.count({
       where: {
         chatRoomId,
-        userId: { not: actualUserId }, // Don't count own messages
+        userId: { not: userId }, // Don't count own messages
         NOT: {
           readers: {
-            has: actualUserId,
+            has: userId,
           },
         },
       },
@@ -77,32 +64,22 @@ export async function POST(
   try {
     const { chatroomId } = await context.params;
     const chatRoomId = chatroomId;
+
+    // Auth check using x-user-id header set by middleware
+    const userId = req.headers.get("x-user-id");
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { userId, messageIds } = body;
+    const { messageIds } = body;
 
     console.log("🔍 POST /messages/unread - Request:", {
       chatRoomId,
       userId,
       messageCount: messageIds?.length || "all",
     });
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
-      );
-    }
-
-    // Get actual database user ID from Clerk ID
-    const dbUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!dbUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const actualUserId = dbUser.id;
 
     // If specific message IDs provided, mark only those as read
     if (messageIds && Array.isArray(messageIds) && messageIds.length > 0) {
@@ -113,7 +90,7 @@ export async function POST(
           chatRoomId,
           NOT: {
             readers: {
-              has: actualUserId,
+              has: userId,
             },
           },
         },
@@ -127,7 +104,7 @@ export async function POST(
               where: { id: msg.id },
               data: {
                 readers: {
-                  push: actualUserId,
+                  push: userId,
                 },
               },
             })
@@ -143,7 +120,7 @@ export async function POST(
       await prisma.chatMember.update({
         where: {
           userId_chatRoomId: {
-            userId: actualUserId,
+            userId: userId,
             chatRoomId: chatRoomId,
           },
         },
@@ -162,10 +139,10 @@ export async function POST(
     const unreadMessages = await prisma.message.findMany({
       where: {
         chatRoomId,
-        userId: { not: actualUserId }, // Don't mark own messages
+        userId: { not: userId }, // Don't mark own messages
         NOT: {
           readers: {
-            has: actualUserId,
+            has: userId,
           },
         },
       },
@@ -179,7 +156,7 @@ export async function POST(
             where: { id: msg.id },
             data: {
               readers: {
-                push: actualUserId,
+                push: userId,
               },
             },
           })
@@ -193,7 +170,7 @@ export async function POST(
     await prisma.chatMember.update({
       where: {
         userId_chatRoomId: {
-          userId: actualUserId,
+          userId: userId,
           chatRoomId: chatRoomId,
         },
       },

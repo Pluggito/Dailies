@@ -1,3 +1,7 @@
+"use client";
+
+import type React from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -64,6 +68,7 @@ export default function Chat({
             size="icon"
             className="md:hidden -ml-2 text-muted-foreground hover:text-foreground"
             onClick={() => setShowMobileChat(false)}
+            aria-label="Back to conversations"
           >
             <ArrowLeft className="size-5" />
           </Button>
@@ -95,14 +100,15 @@ export default function Chat({
           variant="ghost"
           size="icon"
           className="text-muted-foreground hover:text-foreground"
+          aria-label="More options"
         >
           <MoreVertical className="size-5" />
         </Button>
       </div>
 
       {/* Messages - floating bubbles with generous spacing */}
-      <div className="flex-1 overflow-y-auto px-6 py-8">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="max-w-3xl mx-auto space-y-2">
           {messages.map((msg, index) => {
             const showAvatar =
               index === 0 ||
@@ -220,7 +226,7 @@ export default function Chat({
       </div>
 
       {/* Input Area - clean and spacious */}
-      <div className="p-6 border-t border-border bg-card">
+      <div className="p-3 border-t border-border bg-card">
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSend} className="flex items-center gap-3">
             <div className="flex-1 rounded-3xl border border-border focus-within:border-primary/30 transition-colors">
@@ -230,6 +236,7 @@ export default function Chat({
                   variant="ghost"
                   size="icon"
                   className="size-8 text-muted-foreground hover:text-foreground shrink-0"
+                  aria-label="Attach image"
                 >
                   <ImageIcon className="size-4" />
                 </Button>
@@ -250,6 +257,7 @@ export default function Chat({
                       variant="ghost"
                       size="icon"
                       className="size-8 text-muted-foreground hover:text-foreground shrink-0 mb-1 "
+                      aria-label="Add emoji"
                     >
                       <Smile className="size-4" />
                     </Button>
@@ -280,6 +288,7 @@ export default function Chat({
               size="icon"
               className="size-11 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white shadow-lg shadow-purple-500/25 shrink-0 rounded-full cursor-pointer"
               disabled={!message.trim()}
+              aria-label="Send message"
             >
               <Send className="size-4" />
             </Button>

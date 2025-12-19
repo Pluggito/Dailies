@@ -91,7 +91,10 @@ const Sidemenu = () => {
               className="flex flex-col items-center justify-center"
             >
               <Avatar className="w-20 h-20 border-2">
-                <AvatarImage src={displayData.image || "/avatar.png"} />
+                <AvatarImage
+                  src={displayData.image || "/avatar.png"}
+                  alt={`${displayData.name || displayData.username}'s avatar`}
+                />
               </Avatar>
 
               <div className="mt-2">

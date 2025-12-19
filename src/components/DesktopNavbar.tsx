@@ -58,6 +58,7 @@ const DesktopNavbar = () => {
           variant={"ghost"}
           className="flex items-center gap-2"
           onClick={() => handleNavigation("/")}
+          aria-label="Home"
         >
           <HomeIcon className="w-4 h-4" />
           <span className="hidden lg:inline">Home</span>
@@ -69,6 +70,7 @@ const DesktopNavbar = () => {
               variant={"ghost"}
               className="flex items-center gap-2"
               onClick={() => handleNavigation("/notifications")}
+              aria-label="Notifications"
             >
               <BellIcon className="w-4 h-4" />
               <span className="hidden lg:inline">Notifications</span>
@@ -77,6 +79,7 @@ const DesktopNavbar = () => {
               variant={"ghost"}
               className="flex items-center gap-2"
               onClick={() => handleNavigation("/chat")}
+              aria-label="Messages"
             >
               <MessageCircle className="w-4 h-4" />
               Messages
@@ -85,6 +88,7 @@ const DesktopNavbar = () => {
               variant="ghost"
               className="flex items-center gap-2"
               onClick={() => handleNavigation(`/profile/${user.username}`)}
+              aria-label="Profile"
             >
               <UserIcon className="w-4 h-4" />
               <span className="hidden lg:inline">Profile</span>
@@ -95,11 +99,12 @@ const DesktopNavbar = () => {
                 <Button
                   variant="ghost"
                   className="relative h-8 w-8 rounded-full"
+                  aria-label="User menu"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={user.image || undefined}
-                      alt={user.name || user.username}
+                      alt={`${user.name || user.username}'s avatar`}
                     />
                     <AvatarFallback>
                       {(user.name || user.username).charAt(0).toUpperCase()}
