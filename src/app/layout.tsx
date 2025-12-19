@@ -28,9 +28,14 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
-export const metadata: Metadata = {
-  title: "Dailies",
-  description: "Social media application powered by next.js",
+export const metadata = {
+  title: "Dailies — post something every day",
+  description: "A simple social app. No pressure. Just post daily.",
+  openGraph: {
+    title: "Dailies",
+    description: "Post something every day. No pressure.",
+    url: "https://dailies-social.vercel.app",
+  },
 };
 
 export default async function RootLayout({
