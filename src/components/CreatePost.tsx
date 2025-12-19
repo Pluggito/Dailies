@@ -88,7 +88,10 @@ const CreatePost = () => {
         <div className="space">
           <div className="flex space-x-4">
             <Avatar className="w-10 h-10">
-              <AvatarImage src={user?.image || "/avatar.png"} />
+              <AvatarImage
+                src={user?.image || "/avatar.png"}
+                alt={`${user?.name || user?.username}'s avatar`}
+              />
             </Avatar>
             <Textarea
               placeholder="what's on your mind?"

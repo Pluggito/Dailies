@@ -203,7 +203,7 @@ export async function getUserFollowers(userId: string) {
 
     const followers = await prisma.follows.findMany({
       where: {
-        followerId: userId,
+        followingId: userId,
       },
       include: {
         follower: {

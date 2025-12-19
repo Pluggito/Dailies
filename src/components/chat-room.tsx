@@ -119,7 +119,7 @@ export function ChatRoom() {
                 ? "Sent an attachment"
                 : "No messages"),
             timestamp: new Date(room.updatedAt),
-            unread: 0, // TODO: Implement unread count logic if needed
+            unread: room.unreadCount || 0,
             online: false,
             image: otherUser.image || "",
             otherUserId: otherUser.id,
@@ -233,7 +233,19 @@ export function ChatRoom() {
 
       // Auto-mark as read if not own message
       if (!newMessage.isOwn) {
-        setTimeout(() => {
+        setTimeout(async () => {
+          // Update DB via API
+          try {
+            await axios.post(
+              `/api/chatroom/${payload.chatRoomId}/messages/unread`,
+              {
+                messageIds: [payload.id],
+              }
+            );
+          } catch (error) {
+            // console.error("Failed to mark message as read", error);
+          }
+
           send("messages:read", {
             chatRoomId: payload.chatRoomId,
             messageIds: [payload.id],
@@ -378,7 +390,20 @@ export function ChatRoom() {
       const messageIds = unreadMessages.map((msg) => msg.id);
 
       // Delay to simulate "viewing" the messages
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
+        // Update DB via API
+        try {
+          await axios.post(
+            `/api/chatroom/${activeChatRoomId}/messages/unread`,
+            {
+              messageIds,
+            }
+          );
+        } catch (error) {
+          console.error("Failed to mark messages as read via API", error);
+        }
+
+        // Notify via WS for real-time updates
         send("messages:read", {
           chatRoomId: activeChatRoomId,
           messageIds,
@@ -515,7 +540,7 @@ export function ChatRoom() {
   const activeConv = conversations.find((c) => c.id === activeConversation);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] text-foreground bg-card rounded-lg overflow-hidden border border-border shadow-sm">
+    <div className="flex h-[calc(100vh-4rem)] text-foreground  rounded-lg overflow-hidden border border-border shadow-sm">
       <ChatList
         conversations={conversations}
         activeConversation={activeConversation}

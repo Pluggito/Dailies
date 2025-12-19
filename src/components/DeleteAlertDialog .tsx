@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   AlertDialog,
@@ -35,6 +35,7 @@ const DeleteAlertDialog: React.FC<DeleteAlertDialogProps> = ({
           variant={"ghost"}
           size={"sm"}
           className="text-muted-foreground hover:text-red-500 -mr-2"
+          aria-label="Delete post"
         >
           {isDeleting ? (
             <Loader2Icon className="size-4 animate-spin" />

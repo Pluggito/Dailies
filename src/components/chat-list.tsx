@@ -48,6 +48,7 @@ export default function ChatList({
               variant="ghost"
               size="icon"
               className="size-9 text-muted-foreground hover:text-foreground"
+              aria-label="New message"
             >
               <Edit className="size-4" />
             </Button>
@@ -80,8 +81,8 @@ export default function ChatList({
               <Avatar className="size-12">
                 {conv.image ? (
                   <img
-                    src={conv.image}
-                    alt={conv.name}
+                    src={conv.image || "/placeholder.svg"}
+                    alt={`${conv.name}'s avatar`}
                     className="w-full h-full object-cover rounded-full"
                   />
                 ) : (

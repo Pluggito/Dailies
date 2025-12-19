@@ -102,7 +102,10 @@ const PostCard = ({
           <div className="flex space-x-3 sm:space-x-4">
             <Link href={`/profile/${post.author.username}`}>
               <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
-                <AvatarImage src={post.author.image ?? "/avatar.png"} />
+                <AvatarImage
+                  src={post.author.image ?? "/avatar.png"}
+                  alt={`${post.author.name || post.author.username}'s avatar`}
+                />
               </Avatar>
             </Link>
 
@@ -145,7 +148,7 @@ const PostCard = ({
             <div className="rounded-lg overflow-hidden w-full aspect-square bg-secondary/30 relative">
               <img
                 src={post.image}
-                alt="Post content"
+                alt={`Post by ${post.author.name || post.author.username}`}
                 className="w-full h-full object-contain absolute inset-0"
               />
             </div>
@@ -163,6 +166,7 @@ const PostCard = ({
                     : "hover:text-red-500"
                 }`}
                 onClick={handleLike}
+                aria-label={hasLiked ? "Unlike post" : "Like post"}
               >
                 {hasLiked ? (
                   <HeartIcon className="size-5 fill-current" />
@@ -190,6 +194,7 @@ const PostCard = ({
               size={"sm"}
               className="text-muted-foreground gap-2 hover:text-blue-500"
               onClick={() => setShowComments((prev) => !prev)}
+              aria-label="View comments"
             >
               <MessageCircleIcon
                 className={`size-5 ${
@@ -209,6 +214,9 @@ const PostCard = ({
                     <Avatar className="size-8 flex-shrink-0">
                       <AvatarImage
                         src={comment.author.image ?? "/avatar.png"}
+                        alt={`${
+                          comment.author.name || comment.author.username
+                        }'s avatar`}
                       />
                     </Avatar>
                     <div className="flex-1 min-w-0">
@@ -235,7 +243,10 @@ const PostCard = ({
               {isSignedIn && user ? (
                 <div className="flex space-x-3">
                   <Avatar className="size-8 flex-shrink-0">
-                    <AvatarImage src={user.image || "/avatar.png"} />
+                    <AvatarImage
+                      src={user.image || "/avatar.png"}
+                      alt={`${user.name || user.username}'s avatar`}
+                    />
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <Textarea
