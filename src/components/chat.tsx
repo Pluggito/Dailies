@@ -130,25 +130,19 @@ export default function Chat({
                   msg.isOwn ? "flex-row-reverse" : ""
                 }`}
               >
-                {/* Avatar - only show for first message in group */}
-                {showAvatar ? (
-                  <Avatar className="size-8 shrink-0">
-                    <AvatarFallback
-                      className={`${
-                        msg.isOwn
-                          ? "hidden"
-                          : "bg-gradient-to-br from-pink-400 to-rose-600"
-                      } text-white text-xs font-medium`}
-                    >
-                      {msg.sender.name
-                        .split(" ")
-                        .map((n: any[]) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <div className="size-8 shrink-0" />
-                )}
+                {!msg.isOwn &&
+                  (showAvatar ? (
+                    <Avatar className="size-8 shrink-0">
+                      <AvatarFallback className="bg-gradient-to-br from-pink-400 to-rose-600 text-white text-xs font-medium">
+                        {msg.sender.name
+                          .split(" ")
+                          .map((n: any[]) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <div className="size-8 shrink-0" />
+                  ))}
 
                 {/* Message bubble */}
                 <div
